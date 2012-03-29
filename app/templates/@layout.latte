@@ -1,0 +1,145 @@
+{**
+ * My Application layout template.
+ *
+ * @copyright  Copyright (c) 2010 John Doe
+ * @package    MyApplication
+ *
+ * @param string   $basePath web base path
+ * @param string   $robots   tell robots how to index the content of a page (optional)
+ * @param array    $flashes  flash messages
+ *}
+
+<!DOCTYPE html>
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+
+	<meta name="description" content="Nette Framework web application skeleton">
+	<meta name="robots" content="{$robots}" n:ifset="$robots">
+
+	<title>Hlídač objednávek</title>
+
+	<link rel="stylesheet" media="screen,projection,tv" href="{$basePath}/css/screen.css" type="text/css"/>
+	<link rel="stylesheet" media="print" href="{$basePath}/css/print.css" type="text/css"/>
+	<link rel="stylesheet" href="{$basePath}/css/ui-lightness/jquery-ui-1.8.16.custom.css" type="text/css"/>
+        <link rel="shortcut icon" href="{$basePath}/favicon.ico" type="image/x-icon"/>
+        <link rel="stylesheet" media="screen,projection,tv"
+            href="{$basePath}/css/jquery-ui.css"/>
+	<script type="text/javascript" src="{$basePath}/js/jquery-1.6.2.min.js"></script>
+	<script type="text/javascript" src="{$basePath}/js/jquery-ui-1.8.16.custom.min.js"></script>
+        <script type="text/javascript" src="{$basePath}/js/jquery.autocomplete.js"></script>
+        <script type="text/javascript" src="{$basePath}/js/jquery.nette.js"></script>
+        <script type="text/javascript" src="{$basePath}/js/jquery.ajaxform.js"></script>
+        <script type="text/javascript" src="{$basePath}/js/ajax.js"></script>
+        <script type="text/javascript" src="{$basePath}/js/jquery.livequery.js"></script>
+        <script type="text/javascript" src="{$basePath}/js/live-form-validation.js"></script>
+        
+<script type="text/javascript">
+jQuery(function($) {
+    $.datepicker.regional['cs'] = {
+        closeText: 'Zavřít',
+        prevText: '&#x3c;Dříve',
+        nextText: 'Později&#x3e;',
+        currentText: 'Nyní',
+        monthNames: ['leden', 'únor', 'březen', 'duben', 'květen', 'červen', 'červenec', 'srpen',
+            'září', 'říjen', 'listopad', 'prosinec'],
+        monthNamesShort: ['led', 'úno', 'bře', 'dub', 'kvě', 'čer', 'čvc', 'srp', 'zář', 'říj', 'lis', 'pro'],
+        dayNames: ['neděle', 'pondělí', 'úterý', 'středa', 'čtvrtek', 'pátek', 'sobota'],
+        dayNamesShort: ['ne', 'po', 'út', 'st', 'čt', 'pá', 'so'],
+        dayNamesMin: ['ne', 'po', 'út', 'st', 'čt', 'pá', 'so'],
+        weekHeader: 'Týd',
+        dateFormat: 'dd. mm. yy',
+        firstDay: 1,
+        isRTL: false,
+        showMonthAfterYear: false,
+        yearSuffix: ''
+    };
+    $.datepicker.setDefaults($.datepicker.regional['cs']);
+});
+</script>
+<script type="text/javascript">
+    //$("input.date").live('hover', function(){
+    $("input.date").livequery(function(){
+        var el = $(this);
+        var value = el.val();
+        var date = (value ? $.datepicker.parseDate("dd. mm. yy", value) : null);
+
+        var minDate = el.attr("min") || null;
+        if (minDate) minDate = $.datepicker.parseDate("dd. mm. yy", minDate);
+        var maxDate = el.attr("max") || null;
+        if (maxDate) maxDate = $.datepicker.parseDate("dd. mm. yy", maxDate);
+
+        // input.attr("type", "text") throws exception
+        if (el.attr("type") == "date") {
+            var tmp = $("<input/>");
+            $.each("class,disabled,id,maxlength,name,readonly,required,size,style,tabindex,title,value".split(","), function(i, attr)  {
+                tmp.attr(attr, el.attr(attr));
+            });
+            el.replaceWith(tmp);
+            el = tmp;
+        }
+        el.datepicker({
+            minDate: minDate,
+            maxDate: maxDate
+        });
+        el.val($.datepicker.formatDate(el.datepicker("option", "dateFormat"), date));
+    });
+</script>
+	{block head}{/block}
+</head>
+
+<body>
+    <div id="dialog-confirm" title="Opravdu položku smazat?">
+    </div>
+    <div id="flash">
+    {snippet flashes}
+    {foreach $flashes as $flash}<div class="flash {$flash->type}">{$flash->message}</div>{/foreach}
+    {/snippet}
+    </div>
+        
+        {if $user->isLoggedIn()}
+        <div id="menu">
+            <ul>
+                <li><a href="{plink Hlidac:default}">Hlídač objednávek</a></li>
+                <li><a href="{plink SeznamOblasti:default}">Seznam oblastí</a></li>
+                <li><a href="{plink HledaniZakazniku:default}">Vyhledávání</a></li>
+                <li><a href="{plink TiskObjednavek:seznam}">Objednávky k tisku</a></li>
+                <li><a href="{plink Vystupy:default}">Tiskové výstupy</a></li>
+            </ul>
+        </div>
+        {/if}
+        {if $user->isInRole('admin')}
+        <div id="admin_menu">
+            <ul>
+                <li><a href="{plink Automaty:default}">Správa automatů</a></li>
+                <li><a href="{plink Zbozi:default}">Správa zboží</a></li>
+                <li><a href="{plink Zakaznici:default}">Správa zákazníků</a></li>
+                <li><a href="{plink Objednavky:seznam}">Seznam objednávek</a></li>
+                <li><a href="{plink Kontakty:default}">Správa kontaktů</a></li>
+                <li><a href="{plink Technici:default}">Správa techniků</a></li>
+                <li><a href="{plink Oblasti:default}">Oblasti</a></li>
+                <li><a href="{plink ObchodniZastupci:default}">Obchodní zástupci</a></li>
+                <li><a href="{plink Dph:default}">Nastavení DPH</a></li>
+                <li><a href="{plink Kategorie:default}">Nastavení kategorií</a></li>
+                <li><a href="{plink Users:default}">Uživatelé</a></li>
+                <li><a href="{plink Export:default}">Export</a></li>
+            </ul>
+        </div>
+        {/if}
+        {if $user->isLoggedIn()}
+        <div id="login_info">
+            <div id="logged_user">Přihlášený uživatel: {Authenticator::getUsernameById($user->getId())}</div>
+            <div id="logout"><a href={plink Sign:out}>Odhlásit</a></div>
+        </div>
+        {/if}
+        <div id="navigace">
+            {include #navigace}
+        </div>
+        <div id="content">
+            {include #content}
+        </div>
+        <div id="footer">
+            &nbsp;
+        </div>
+</body>
+</html>

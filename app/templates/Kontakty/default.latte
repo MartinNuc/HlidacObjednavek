@@ -1,0 +1,61 @@
+{block navigace}
+<a href="{plink Hlidac:default}">Hlídač objednávek</a> / {include #title}
+{/block}
+
+{block content}
+<h1>{block #title}Správa kontaktů{/block}</h1>
+<p><a href="{$hromadnymail}">Odeslat hromadný email</a></p>
+{snippet formKontakty}
+    {control filtrKontakty}
+{/snippet}
+{snippet kontakty}
+{control vp}
+<table class="table kontakty">
+    <thead>
+        <tr>
+            <th>Jméno</th>
+            <th>Telefon</th>
+            <th>Email</th>
+            <th>Poznámka</th>
+            <th>&nbsp;</th>
+        </tr>
+    </thead>
+    <tbody>
+        {if count($items) == 0}
+            <tr class="licha"><td colspan="5">Žádná data</td></tr>
+        {/if}
+
+	{assign $i => 0}
+	{foreach $items as $item}	
+		{if $i % 2 }
+                     <tr class="slight_border licha">
+                {else}
+                     <tr class="slight_border suda">
+                {/if}
+
+		<td>
+                    <a href="{plink Edit, $item->id_kontakt}">{$item->jmeno}</a>
+                </td><td>
+		{$item->telefon}
+                </td><td>
+		{if $item->email != ""}
+                    <a href="mailto:{$item->email}">{$item->email}</a>
+                {/if}
+                </td><td>
+		{$item->poznamka}
+                </td><td>
+		<a  class="ajax delete" href="{plink Delete!, $item->id_kontakt}"><img alt="Smazat" src="{$basePath}/images/delete.png"></a>
+                <a href="{plink Edit, $item->id_kontakt}"><img alt="Upravit" src="{$basePath}/images/edit.png"></a>
+		{assign $i => $i+1}
+		</td>
+		</tr>
+	{/foreach}
+    </tbody>
+</table>
+{/snippet}
+<div id="nova_oblst">
+<h2>Přidání nového kontaktu</h2>
+{snippet form}
+    {control pridatKontakt}
+{/snippet}
+</div>

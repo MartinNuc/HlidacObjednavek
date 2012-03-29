@@ -1,0 +1,13 @@
+{block navigace}
+<a href="{plink Hlidac:default}">Hlídač objednávek</a> / <a href="{plink Zbozi:default}">Správa zboží</a> / {include #title}
+{/block}
+
+{block content}
+<h1>{block #title}Editace zboží{/block}</h1>
+{control upravitZbozi}
+<script type="text/javascript">
+    $('#frmupravitZbozi-body').live("keyup", function() {
+       var text = $(this).val();
+       $(this).val(text.replace(',', '.')); 
+    });
+</script>

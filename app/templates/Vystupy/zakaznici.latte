@@ -1,0 +1,94 @@
+{block navigace}
+<a href="{plink Hlidac:default}">Odběry</a> / <a href="{plink Vystupy:default}">Tiskové výstupy</a> / {include #title}
+{/block}
+
+{block content}
+<h1>{block #title}Odběry{/block}</h1>
+<p class="noPrint">Vyberte z každé skupiny alespoň jednu volbu.</p>
+{snippet formZakaznici}
+    {control filtrZakaznici}
+{/snippet}
+
+{snippet strankyLong}
+<table class="table zakaznici">
+    <colgroup>
+        {foreach $zbozi as $item}
+            <col class="sloupeczbozi" />
+        {/foreach}
+    </colgroup>
+
+    <thead>
+        <tr>
+            <th>Zákazník</th>
+            {foreach $zbozi as $item}
+                <th>{$item->zkratka}</th>
+            {/foreach}
+        </tr>
+    </thead>
+    <tbody>
+        {if count($zakaznici) == 0}
+            <tr class="licha"><td colspan="{count($zbozi)+1}">Žádná data</td></tr>
+        {/if}
+	{assign $i => 0}
+	{foreach $zakaznici as $zakaznik}
+            {if $i % 2 }
+                 <tr class="slight_border zakaznik licha">
+            {else}
+                 <tr class="slight_border zakaznik suda">
+            {/if}
+            <td>
+                {if isset($zakaznik->nazev)}
+                    {if $user->isInRole('admin')}
+                        <a class="noPrint" href="{plink Zakaznici:edit, $zakaznik->id_zakaznik}"><img alt="Upravit" class="noPrint" src="{$basePath}/images/edit.png"/></a>
+                        <a href="{plink Objednavky:default, $zakaznik->id_zakaznik}">{$zakaznik->nazev}</a>
+                    {else}
+                        <a href="{plink Objednavky:default, $zakaznik->id_zakaznik}">{$zakaznik->nazev}</a>
+                    {/if}
+                {else}
+                    &nbsp;
+                {/if}
+
+            </td>
+            {foreach $zbozi as $item}
+            <td>
+                {$soucty[$zakaznik->id_zakaznik][$item->id_zbozi]}
+            </td>
+            {/foreach}
+            </tr>
+            {assign $i => $i+1}
+            {if $skryt_automaty == 0}
+                {foreach $automaty[$zakaznik->id_zakaznik] as $item}
+                    {if $i % 2 }
+                         <tr class="slight_border automat licha">
+                    {else}
+                         <tr class="slight_border automat suda">
+                    {/if}
+                    <td>
+                        {if $item->bmb != ""}
+                            BMB: {$item->bmb}, 
+                        {/if}
+                        Výrobní číslo: {$item->vyrobni_cislo}
+                    </td>    
+                    {foreach $zbozi as $zb}
+                    <td>
+                        {$automaty_soucty[$zakaznik->id_zakaznik . "_" . $item->vyrobni_cislo . $item->bmb][$zb->id_zbozi]}
+                    </td>
+                    {/foreach} 
+                    </tr>
+                    {assign $i => $i+1}
+                {/foreach}
+            {/if}
+	{/foreach}
+        {if count($zakaznici) != 0}
+            <tr>
+                <td colspan="1">Celkem</td>
+                {foreach $soucty_celkem as $zb}
+                    <td>
+                        {$zb}
+                    </td>
+                {/foreach}
+            </tr>
+        {/if}
+    </tbody>
+</table>
+{/snippet}

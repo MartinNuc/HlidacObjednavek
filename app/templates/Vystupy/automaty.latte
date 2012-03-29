@@ -1,0 +1,101 @@
+{block navigace}
+<a href="{plink Hlidac:default}">Hlídač objednávek</a> / <a href="{plink Vystupy:default}">Tiskové výstupy</a> / {include #title}
+{/block}
+
+{block content}
+<h1>{block #title}Seznam zákazníků{/block}</h1>
+
+<p class="noPrint">Vyberte z každé skupiny alespoň jednu volbu.</p>
+
+{snippet formAutomaty}
+    {control filtrAutomaty}
+{/snippet}
+
+{snippet stranky}
+<table class="table zakaznici">
+    <thead>
+        <tr>
+            <th>Č. smlouvy</th>
+            <th>Umístění</th>
+            <th>Adresa</th>
+            <th>Zákazník</th>
+            <th>Výrob. č.</th>
+            <th>Layout</th>
+            <th>BMB</th>
+            <th>Káva</th>
+            <th>Platnost do</th>
+            <th>Kontakt</th>
+            <th>Email</th>
+        </tr>
+    </thead>
+    <tbody>
+        {if count($items) == 0}
+            <tr class="licha"><td colspan="11">Žádná data</td></tr>
+        {/if}
+	{assign $i => 0}
+	{foreach $items as $item}
+            {if $i % 2 }
+                 <tr class="slight_border zakaznik licha">
+            {else}
+                 <tr class="slight_border zakaznik suda">
+            {/if}
+            <td>
+                {$item->cislo_smlouvy}
+            </td>
+            <td>
+                {$item->umisteni}
+            </td>            
+            <td>
+                {$item->automat_adresa}
+            </td>            
+            <td>
+                {if isset($item->zakaznik_nazev)}
+                    {if $user->isInRole('admin')}
+                        <a class="noPrint" href="{plink Zakaznici:edit, $item->id_zakaznik}"><img class="noPrint" alt="Upravit" src="{$basePath}/images/edit.png"/></a>
+                        <a href="{plink Objednavky:default, $item->id_zakaznik}">{$item->zakaznik_nazev}</a>
+                    {else}
+                        <a href="{plink Objednavky:default, $item->id_zakaznik}">{$item->zakaznik_nazev}</a>
+                    {/if}
+                {else}
+                    &nbsp;
+                {/if}
+            </td>            
+            <td>
+                {$item->vyrobni_cislo}
+            </td>            
+            <td>
+                {$item->layout}
+            </td>            
+            <td>
+                {$item->bmb}
+            </td> 
+            <td>
+                {if isset($kava[$item->id_zakaznik])}
+                    {$kava[$item->id_zakaznik]}
+                {else}
+                    &nbsp;
+                {/if}
+            </td>
+            <td>
+                {$item->platnost_do}
+            </td> 
+            <td>
+                {if isset($kontakt_jmeno[$item->id_automat])}
+                    {$kontakt_jmeno[$item->id_automat]}
+                {else}
+                    &nbsp;
+                {/if}
+            </td> 
+            <td>
+                {if isset($kontakt_email[$item->id_automat])}
+                    <a href="mailto:{$kontakt_email[$item->id_automat]}">{$kontakt_email[$item->id_automat]}</a>
+                {else}
+                    &nbsp;
+                {/if}
+            </td>            
+
+            {assign $i => $i+1} 
+	{/foreach}
+    </tbody>
+</table>
+{/snippet}

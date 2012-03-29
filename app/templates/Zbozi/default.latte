@@ -1,0 +1,118 @@
+{block navigace}
+<a href="{plink Hlidac:default}">Hlídač objednávek</a> / {include #title}
+{/block}
+{block content}
+
+<script type="text/javascript">
+var id;
+jQuery(function($) {
+        $('a.ajaxdialog').live('click', function(event) {
+                event.preventDefault();
+                id = $(this).attr("id");
+                
+                $.post($.nette.href = this.href, function(data) {
+                        // (mimo jine) injektovani formulare do HTML
+                        $.nette.success(data);
+                        // aktivace ajaxoveho submitu formulare
+                        // zobrazeni formulare v dialogu
+                        $("#snippet--simpleForm").dialog( { modal: true, title: "Přidání zboží na sklad"} );
+                }, "json");
+
+                $('#frmsimpleForm-pocet').live ('keydown', function (event) {
+                    $('#frmsimpleForm-id').val(id);
+                });
+        });
+});
+</script>
+
+<h1>{block #title}Správa zboží{/block}</h1>
+{snippet formFiltrZbozi}
+    {control filtrZbozi}
+{/snippet}
+{snippet stranky}
+{control vp}
+<table class="table zbozi">
+    <thead>
+        <tr>
+            <th>Zkratka</th>
+            <th>Název</th>
+            <th>DPH</th>
+            <th>Nákupní cena</th>
+            <th>Prodejní cena</th>
+            <th>Body</th>
+            <th>Kategorie</th>
+            <th>Spadá pod Nestle</th>
+            <th>Ks skladem</th>
+            <th>&nbsp;</th>
+        </tr>
+    </thead>
+    <tbody>
+        {if count($items) == 0}
+            <tr class="licha"><td colspan="10">Žádná data</td></tr>
+        {/if}
+
+	{assign $i => 0}
+	{foreach $items as $item}	
+		{if $i % 2 }
+                     <tr class="slight_border licha">
+                {else}
+                     <tr class="slight_border suda">
+                {/if}
+
+		<td>
+		{$item->zkratka}
+                </td><td>
+                <a href="{plink Edit, $item->id_zbozi}">{$item->nazev}</a>
+                </td><td>
+                {$item->dph} %
+                </td><td>
+                {$item->nakupni_cena |number:2:',':' '} Kč                    
+                </td><td>
+                {$item->prodejni_cena |number:2:',':' '} Kč                    
+                </td><td>
+                {$item->body}
+                </td><td>
+                {$item->kategorie_nazev}
+                </td><td>
+                {$item->nestle ? "Ano" : "Ne"}
+                </td><td>
+                    <a n:href="getSimpleForm!" id="{$item->id_zbozi}" class="ajaxdialog">
+                {if $item->skladem < 1}
+                    <div class="red_font">{$item->skladem}</div>
+                {else}
+                    {$item->skladem}
+                {/if}
+                    </a>
+                </td><td>
+		<a class="ajax delete" href="{plink Delete!, $item->id_zbozi}"><img alt="Delete" src="{$basePath}/images/delete.png"></a>
+                <a href="{plink Edit, $item->id_zbozi}"><img alt="Edit"  src="{$basePath}/images/edit.png"></a>
+		{assign $i => $i+1}
+		</td>
+		</tr>
+	{/foreach}
+    </tbody>
+</table>
+{/snippet}
+<div id="novy_zbozi">
+<h2>Nové zboží</h2>
+{snippet form}
+    {control pridatZbozi}
+{/snippet}
+</div>
+<script type="text/javascript">
+    $('#frmpridatZbozi-body').live("keyup", function() {
+       var text = $(this).val();
+       $(this).val(text.replace(',', '.')); 
+    });
+    $('#frmpridatZbozi-nakupni_cena').live("keyup", function() {
+       var text = $(this).val();
+       $(this).val(text.replace(',', '.')); 
+    });
+    $('#frmpridatZbozi-prodejni_cena').live("keyup", function() {
+       var text = $(this).val();
+       $(this).val(text.replace(',', '.')); 
+    });
+</script>
+{snippet simpleForm}
+{if isset($showSimpleForm)}{control simpleForm}{/if}
+{/snippet}

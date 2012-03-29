@@ -1,0 +1,121 @@
+{block navigace}
+<a href="{plink Hlidac:default}">Hlídač objednávek</a> / <a href="{plink Vystupy:default}">Tiskové výstupy</a> / {include #title}
+{/block}
+
+{block content}
+<h1>{block #title}Sklad{/block}</h1>
+<p class="noPrint">Vyberte z každé skupiny alespoň jednu volbu.</p>
+{snippet formZbozi}
+    {control filtrZbozi}
+{/snippet}
+
+{snippet stranky}
+<table class="table zakaznici">
+    <thead>
+        <tr>
+            <th>Zkratka</th>
+            {if $user->isInRole('admin')}
+                <th>Nákup. cena</th>
+            {/if}
+            <th>Prodej. cena</th>
+            <th>Skladem</th>
+            {if $user->isInRole('admin')}
+                <th>Celk. NC cena</th>
+            {/if}
+            <th>Celk. PC cena</th>
+        </tr>
+    </thead>
+    <tbody>
+        {if count($kategorie) == 0}
+            <tr class="licha"><td colspan="6">Žádná data</td></tr>
+        {/if}
+	{assign $i => 0}
+	{foreach $kategorie as $kat}
+            <tr class="slight_border zakaznik suda">
+                {if $user->isInRole('admin')}
+                    <td  colspan="6">{$kat->nazev}</td>
+                {else}
+                    <td  colspan="4">{$kat->nazev}</td>
+                {/if}
+            </tr>
+            {foreach $zbozi[$kat->id_kategorie] as $item}
+                {if $i % 2 }
+                     <tr class="slight_border automat licha">
+                {else}
+                     <tr class="slight_border automat licha">
+                {/if}
+                    <td>
+                        {if $user->isInRole('admin')}
+                            <a href="{plink Zbozi:edit, $item->id_zbozi}">{$item->zkratka}</a>
+                        {else}
+                            {$item->zkratka}
+                        {/if}
+                    </td>
+                    {if $user->isInRole('admin')}
+                        <td>
+                            {$item->nakupni_cena |number:2:',':' '} Kč
+                        </td> 
+                    {/if}
+                    <td>
+                        {$item->prodejni_cena |number:2:',':' '} Kč
+                    </td>
+                    <td>
+                        {$item->skladem} ks
+                    </td> 
+                    {if $user->isInRole('admin')}
+                        <td>
+                            {$item->nakupni_cena * $item->skladem |number:2:',':' '} Kč
+                        </td>            
+                    {/if}
+                    <td>
+                        {$item->prodejni_cena * $item->skladem |number:2:',':' '} Kč
+                    </td> 
+                </tr>
+            {/foreach}
+                <tr>
+                    {if $user->isInRole('admin')}
+                        <td colspan="3">
+                    {else}
+                        <td colspan="2">   
+                    {/if}
+                        &nbsp;
+                    </td>
+                    <td>
+                        Celkem:
+                    </td>
+                    {if $user->isInRole('admin')}
+                        <td>
+                            {$soucty_nc[$kat->id_kategorie]|number:2:',':' '} Kč
+                        </td>
+                    {/if}
+                    <td>
+                        {$soucty_pc[$kat->id_kategorie]|number:2:',':' '} Kč
+                    </td>
+                </tr>
+            {assign $i => $i+1} 
+	{/foreach}
+        {if count($kategorie) != 0}
+            <tr>
+                {if $user->isInRole('admin')}
+                    <td colspan="3">
+                {else}
+                    <td colspan="2">   
+                {/if}
+                    &nbsp;
+                </td>
+                <td>
+                    Součet celkem:
+                </td>
+                {if $user->isInRole('admin')}
+                    <td>
+                        {$soucty_nc_celkem|number:2:',':' '} Kč
+                    </td>
+                {/if}
+                <td>
+                    {$soucty_pc_celkem|number:2:',':' '} Kč
+                </td>
+            </tr>
+        {/if}
+    </tbody>
+</table>
+{/snippet}

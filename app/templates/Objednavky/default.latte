@@ -1,0 +1,261 @@
+{block navigace}
+{if (isset ($id_oblast))}
+    <a href="{plink Hlidac:default}">Hlídač objednávek</a> / <a href="{plink ZakazniciVOblasti:default, $id_oblast}">Oblast</a> / {include #title}
+{else}
+    <a href="{plink Hlidac:default}">Hlídač objednávek</a> / <a href="{plink ProhledavaniZakazniku:default}">Vyhledávání zákazníků</a> / {include #title}
+{/if}
+{/block}
+
+{block content}
+
+<div id="automat_zakaznik">
+    <div class="objednavka_infozakaznik">
+        <h2>Informace o zákazníkovi</h2>
+        <div class="obj_info_zakaznik">
+            Zákazník: {$zakaznik->nazev}<br>
+            IČ: {$zakaznik->ico}<br>
+            Počet stanic: {$pocet_stanic}<br>
+        </div>
+        <div class="objednavka_smlouvy">
+            <h3>Smlouvy</h3>
+            <table class="table objednavky_smlouvy">
+                <thead>
+                    <tr>
+                        <th>Číslo smlouvy</th>
+                        <th>Minimální odběr</th>
+                        <th>Platnost od</th>
+                        <th>Platnost do</th>
+                        <th>Způsob platby</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {if count($smlouvy) == 0}
+                        <tr class="licha"><td colspan="5">Žádná data</td></tr>
+                    {/if}
+
+                    {assign $i => 0}
+                    {foreach $smlouvy as $item}
+                        {if $i % 2 }
+                            <tr class="slight_border licha">
+                        {else}
+                            <tr class="slight_border suda">
+                        {/if}
+                        <td>
+                            {$item->cislo_smlouvy}
+                        </td>
+                        <td>
+                            {$item->minimalni_odber}
+                        </td>
+                        <td>
+                            {$item->od}
+                        </td>
+                        <td>
+                            {$item->do}
+                        </td>
+                        <td>
+                            {$item->zpusob_platby}
+                        </td>
+
+                        </tr>
+                        {assign $i => $i+1}
+                    {/foreach}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <p class="red_font">
+        {if $zakaznik->poznamka != ""}
+            {$zakaznik->poznamka}
+        {/if}
+    </p>
+    <hr>
+    <div class="objednavka_infoautomat">
+    {snippet objAutomat}
+    <h2>Informace o automatu</h2>
+        <div class="obj_info_automat">
+            Automat: {$automat->nazev}<br/>
+            Umístění: {$automat->umisteni}<br/>
+            Adresa automatu: {$automat->adresa}<br/>
+            BMB: {$automat->bmb}<br/>
+            Výrobní číslo: {$automat->vyrobni_cislo}<br/>
+            Layout: {$automat->layout}<br/>
+            Technik: {$automat->technik_jmeno} {$automat->technik_prijmeni}<br/>
+            Obchodní zástupce: {$automat->oz_jmeno}<br/>
+            <span class="hidden">{$automat->id_automat}</span>
+        </div>
+        {if $pocet_stanic > 1}
+            <div id="rolo">
+                {if $id_predchozi == NULL}
+                    <img class="arrow" src="{$basePath}/images/up_inactive.png"/>
+                {else}
+                    <a class="ajax rolo" href="{plink Next!, $id_predchozi}"><img class="arrow" src="{$basePath}/images/up.png"/></a>
+                {/if}
+                <br/>
+                {if $id_dalsi == NULL}
+                    <img class="arrow" src="{$basePath}/images/down_inactive.png"/>
+                {else}
+                    <a class="ajax rolo" href="{plink Next!, $id_dalsi}"><img class="arrow" src="{$basePath}/images/down.png"></a>
+                {/if}
+            </div>
+        {/if}
+        <div id="objednavka_automat_oblast">{$automat->oblast_nazev}</div>
+       
+        <div class="objednavka_kontakty">
+            <h3>Kontakty</h3>
+            <table class="table objednavky_kontakty">
+                <thead>
+                    <tr>
+                        <th>Jméno</th>
+                        <th>Telefon</th>
+                        <th>Email</th>
+                        <th>Poznámka</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {if count($kontakty) == 0}
+                        <tr class="licha"><td colspan="4">Žádná data</td></tr>
+                    {/if}
+                    {assign $i => 0}
+                    {foreach $kontakty as $item}
+                        {if $i % 2 }
+                            <tr class="slight_border licha">
+                        {else}
+                            <tr class="slight_border suda">
+                        {/if}
+                        <td>
+                            {$item->jmeno}
+                        </td>
+                        <td>
+                            {$item->telefon}
+                        </td>
+                        <td>
+                            {$item->email}
+                        </td>
+                        <td>
+                            {$item->poznamka}
+                        </td>
+                        </tr>
+                        {assign $i => $i+1}
+                    {/foreach}
+                </tbody>
+            </table>
+        </div>
+    {/snippet}
+    </div>
+</div>
+
+<script type="text/javascript">
+    $(document).ready(function () {
+        $("#frmeditObjednavka-prepocitat").click();
+    });
+    $('.obj_zbozi').live("keyup", function() {
+       var text = $(this).val();
+       $(this).val(text.replace(',', '.')); 
+       $("#frmnovaObjednavka-prepocitat").click();
+    });
+    
+    $('body').live('hover', function(){
+        $value = $('span.hidden').text();
+        $('input#frmnovaObjednavka-id_automat').val($value);
+    });
+</script>
+{snippet nova_objednavka}
+<div id="nova_objednavka">
+    <h1>{block #title}Nová objednávka{/block}</h1>
+    {control novaObjednavka}
+    {snippet cena}
+    <p>
+        Celkova cena bez DPH: {$cena_bez_dph |number:2:',':' '} Kč<br/>
+        Celkova cena s DPH: {$cena_s_dph |number:2:',':' '} Kč<br/>
+        Body: {$body}<br/>
+        {if $user->isInRole('admin')}
+            Zisk: {$zisk |number:2:',':' '} Kč
+        {/if}
+    </p>
+    {/snippet}
+</div>
+{/snippet}
+<div id="historie_obj">
+    <hr>
+    <h2>Historie objednávek</h2>
+    {control filtrObjednavky}
+    {snippet objHistorie}
+    <div id="historie_objednavek">
+        <table class="table objednavky_historie">
+            <thead>
+                <tr>
+                    <th>Datum</th>
+                    <th>Body</th>
+                    <th>Zboží</th>
+                    <th>Cena bez DPH</th>
+                    <th>Cena s DPH</th>
+                    <th>Poznámka</th>
+                </tr>
+            </thead>
+            <tbody>
+                {if count($historie) == 0}
+                    <tr class="licha"><td colspan="6">Žádná data</td></tr>
+                {/if}
+                {assign $i => 0}
+                {foreach $historie as $item}
+                    {if $i % 2 }
+                        <tr class="licha">
+                    {else}
+                        <tr>
+                    {/if}
+                    <td>
+                        {$item->datum}
+                    </td>
+                    <td>
+                        {$item->body}
+                    </td>
+                    <td>
+                        {!$historie_zbozi[$i]}
+                    </td>
+                    <td>
+                        {if isset($item->cena_bez_dph) && $item->cena_bez_dph!=0}
+                            {$item->cena_bez_dph |number:2:',':' '} Kč                                    
+                        {/if}
+                    </td>
+                    <td>
+                        {if isset($item->cena_bez_dph) && $item->cena_bez_dph!=0}
+                            {$item->cena_s_dph |number:2:',':' '} Kč                                    
+                        {/if}
+                    </td>
+                    <td>
+                        {$item->poznamka}
+                    </td>
+                    </tr>
+                    {assign $i => $i+1}
+                {/foreach}
+            </tbody>
+        </table>
+    </div>
+    <hr/>
+    <div id="historie_shrnuti">
+        <table class="table objednavky_historie">
+            <tbody>
+                <tr class="licha">
+                    <td>Celkový součet:</td>
+                    <td>
+                        {!$historie_shrnuti_soucet}
+                    </td>
+                </tr>
+                <tr>
+                    <td>Průměr na jednu obj.:</td>
+                    <td>
+                        {!$historie_shrnuti_prumer}
+                    </td>
+                </tr>
+                <tr class="licha">
+                    <td colspan="2">
+                        Cena celkem bez DPH: {$celkova_cena_bez_dph |number:2:',':' '} Kč<br/>
+                        Cena celkem s DPH: {$celkova_cena_s_dph |number:2:',':' '} Kč<br/>
+                        Body celkem: {$celkem_body}
+                    </td>
+                </tr>           
+            </tbody>
+        </table>
+    </div>
+    {/snippet}
+</div>

@@ -1,0 +1,53 @@
+{block navigace}
+<a href="{plink Hlidac:default}">Hlídač objednávek</a> / <a href="{plink SeznamOblasti:default}">Výběr oblasti</a> / {include #title}
+{/block}
+
+{block content}
+<h1>{block #title}Výběr zákazníka{/block}</h1>
+<p>Vyberte zákazníka pro kterého chcete vytvořit objednávku</p>
+{snippet formZakaznici}
+    {control filtrZakaznici}
+{/snippet}
+{snippet stranky}
+{control vp}
+<table class="table zakaznici_v_oblasti">
+    <thead>
+        <tr>
+            <th>Název</th>
+            <th>Kontaktní adresa</th>
+            <th>email</th>
+        </tr>
+    </thead>
+    <tbody>
+        {if count($items) == 0}
+            <tr class="licha"><td colspan="3">Žádná data</td></tr>
+        {/if}
+
+	{assign $i => 0}
+	{foreach $items as $item}
+            {if $item->id_zakaznik != 0}
+		{if $i % 2 }
+                     <tr class="slight_border licha">
+                {else}
+                     <tr class="slight_border suda">
+                {/if}
+
+		<td>
+		<span><a href="{plink Objednavky:default, $item->id_zakaznik, NULL, $id_oblast}">{$item->nazev}</a></span>
+                </td>
+                <td>
+		{$item->adresa}
+                </td>
+		<td>
+                {if $item->email != ""}
+                    <a href="mailto:{$item->email}">{$item->email}</a>
+                {/if}
+                </td>
+		{assign $i => $i+1}
+		</tr>
+            {/if}
+	{/foreach}
+	</tr>
+    </tbody>
+</table>
+{/snippet}

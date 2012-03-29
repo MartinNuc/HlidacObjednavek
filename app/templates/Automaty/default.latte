@@ -1,0 +1,85 @@
+{block navigace}
+<a href="{plink Hlidac:default}">Hlídač objednávek</a> / {include #title}
+{/block}
+
+{block content}
+<h1>{block #title}Správa automatů{/block}</h1>
+{snippet formFiltrAutomaty}
+    {control filtrAutomaty}
+{/snippet}
+{snippet stranky}
+{control vp}
+<table class="table automaty">
+    <thead>
+        <tr>
+            <th>Název</th>
+            <th>BMB</th>
+            <th>Výrobní číslo</th>
+            <th>Layout</th>
+            <th>Umístění</th>
+            <th>Adresa</th>
+            <th>Zákazník</th>
+            <th>Oblast</th>
+            <th>&nbsp;</th>
+        </tr>
+    </thead>
+    <tbody>
+        {if count($items) == 0}
+            <tr class="licha"><td colspan="9">Žádná data</td></tr>
+        {/if}
+	{assign $i => 0}
+	{foreach $items as $item}	
+		{if $i % 2 }
+                     <tr class="slight_border licha">
+                {else}
+                     <tr class="slight_border suda">
+                {/if}
+
+		<td>
+		<a href="{plink Edit, $item->id_automat}">{$item->nazev}</a>
+		</td><td>
+                {$item->bmb}
+		</td><td>
+                {$item->vyrobni_cislo}
+                </td><td>
+                {$item->layout}
+                </td><td>
+                {$item->umisteni}
+                </td><td>
+                {if $item->id_zakaznik == 0 || $item->id_oblast==0 && $item->adresa!=""}
+                    <div class="red">{$item->adresa}</div>
+                {else}
+                    {$item->adresa}
+                {/if}
+                </td><td>
+                {if $item->zakaznik_hidden==1}
+                    <div class="red">{$item->zakaznik_nazev}</div>
+                {elseif $item->id_oblast == 0 && $item->id_zakaznik != 0}
+                    <div class="red"><a href="{plink Zakaznici:edit, $item->id_zakaznik}">{$item->zakaznik_nazev}</a></div>
+                {elseif $item->id_zakaznik == 0}
+                    {$item->zakaznik_nazev}
+                {else}
+                    <a href="{plink Zakaznici:edit, $item->id_zakaznik}">{$item->zakaznik_nazev}</a>
+                {/if}
+                </td><td>
+                {if $item->id_zakaznik == 0 && $item->id_oblast != 0}
+                    <div class="red">{$item->oblast_nazev}</div>
+                {else}
+                    {$item->oblast_nazev}
+                {/if}
+                </td><td>
+		<a  class="ajax delete" href="{plink Delete!, $item->id_automat}"><img alt="Delete" src="{$basePath}/images/delete.png"></a>
+                <a href="{plink Edit, $item->id_automat}"><img alt="Edit" src="{$basePath}/images/edit.png"></a>
+		{assign $i => $i+1}
+		</td>
+		</tr>
+	{/foreach}
+    </tbody>
+</table>
+{/snippet}
+<div id="novy_automat">
+<h2>Přidání nového automatu</h2>
+{snippet form}
+    {control pridatAutomat}
+{/snippet}
+</div>

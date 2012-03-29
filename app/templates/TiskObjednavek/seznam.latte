@@ -1,0 +1,24 @@
+{block navigace}
+<a href="{plink Hlidac:default}">Hlídač objednávek</a> / {include #title}
+{/block}
+
+{block content}
+<h1>{block #title}Objednávky k tisku{/block}</h1>
+{if count($objednavky) != 0}
+    <a id="checkAllAuto" href="#">Vybrat vše</a>
+    {snippet formTiskObjednavek}
+        {control tiskObjednavek}
+    {/snippet}
+{else}
+    <p>Žádné objednávky k tisku</p>
+{/if}
+    
+<script>
+$('#checkAllAuto').click(
+    function()
+    {
+        $("INPUT[type='checkbox']").attr('checked', true);    
+        return false;
+    }
+)
+</script>

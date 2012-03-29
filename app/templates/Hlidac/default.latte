@@ -1,0 +1,46 @@
+{block navigace}
+    {include #title} /
+{/block}
+
+{block content}
+<h1>{block #title}Hlídač objednávek{/block}</h1>
+<p>Nacházíte se na úvodní stránce systému pro hlídání objednávek. Pod tímto textem jsou zobrazeni zákaznící, kteří si neprovedli žádnou objednávku během posledního mesíce. Kliknutím na zákazníka můžete objednávku vytvořit.
+    
+{snippet formFiltrObjednavky}
+    {control filtrObjednavky}
+{/snippet}
+{snippet seznam}
+{control vp}
+<table class="table hlidac">
+    <thead>
+        <tr>
+            <th>Zakazník</th>
+            <th>Datum poslední objednávky</th>
+        </tr>
+    </thead>
+    <tbody>
+        {if count($items) == 0}
+            <tr class="licha"><td colspan="2">Žádná data</td></tr>
+        {/if}
+	{assign $i => 0}
+	{foreach $items as $item}
+            {if $item->id_zakaznik != 0}
+		{if $i % 2 }
+                     <tr class="slight_border licha">
+                {else}
+                     <tr class="slight_border suda">
+                {/if}
+
+		<td>
+                    <a href="{plink Objednavky:default, $item->id_zakaznik}">{$item->nazev}</a>
+                </td>
+                <td>
+		{$item->datum}
+		</td>
+		</tr>
+		{assign $i => $i+1}
+            {/if}
+	{/foreach}
+    </tbody>
+</table>
+{/snippet}

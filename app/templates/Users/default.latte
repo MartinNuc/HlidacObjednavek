@@ -1,0 +1,49 @@
+{block navigace}
+<a href="{plink Hlidac:default}">Hlídač objednávek</a> / {include #title}
+{/block}
+
+{block content}
+<h1>{block #title}Správa uživatelů{/block}</h1>
+{snippet list}
+<table class="table uzivatele">
+    <thead>
+        <tr>
+            <th>Přihlašovací jméno</th>
+            <th>Role</th>
+            <th>&nbsp;</th>
+        </tr>
+    </thead>
+    <tbody>
+        {if count($items) == 0}
+            <tr class="licha"><td colspan="3">Žádná data</td></tr>
+        {/if}
+	{assign $i => 0}
+	{foreach $items as $item}	
+		{if $i % 2 }
+                     <tr class="slight_border licha">
+                {else}
+                     <tr class="slight_border suda">
+                {/if}
+
+		<td>
+		{$item->username}
+                </td><td>
+		{$item->role}
+                </td><td>
+                {if $item->id_user != 0}
+                    <a class="ajax delete" href="{plink Delete!, $item->id_user}"><img alt="Smazat" src="{$basePath}/images/delete.png"></a>
+                {/if}
+                <a href="{plink Edit, $item->id_user}"><img alt="Upravit" src="{$basePath}/images/edit.png"></a>
+		{assign $i => $i+1}
+		</td>
+		</tr>
+	{/foreach}
+    </tbody>
+</table>
+{/snippet}
+<div id="nova_oblst">
+<h2>Přidání nového uživatele</h2>
+{snippet form}
+    {control pridatUser}
+{/snippet}
+</div>

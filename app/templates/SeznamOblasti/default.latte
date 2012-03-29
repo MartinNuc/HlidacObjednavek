@@ -1,0 +1,35 @@
+{block navigace}
+<a href="{plink Hlidac:default}">Hlídač objednávek </a> / {include #title}
+{/block}
+
+{block content}
+<h1>{block #title}Výběr oblasti{/block}</h1>
+<p>Pro zadání objednávky vyberte oblast, ve které zákazník se nachází.</p>
+<table class="table oblasti">
+    <thead>
+        <tr>
+            <th>Název</th>
+        </tr>
+    </thead>
+    <tbody>
+        {if count($items) == 1}
+            <tr class="licha"><td colspan="1">Žádná data</td></tr>
+        {/if}
+	{assign $i => 0}
+	{foreach $items as $item}
+            {if $item->id_oblast != 0}
+		{if $i % 2 }
+                     <tr class="slight_border licha">
+                {else}
+                     <tr class="slight_border suda">
+                {/if}
+
+		<td>
+		<a href="{plink ZakazniciVOblasti:default, $item->id_oblast}">{$item->nazev}</a>
+                </td>
+		{assign $i => $i+1}
+		</tr>
+            {/if}
+	{/foreach}
+    </tbody>
+</table>

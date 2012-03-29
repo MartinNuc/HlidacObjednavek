@@ -1,0 +1,44 @@
+{block navigace}
+<a href="{plink Hlidac:default}">Hlídač objednávek</a> / {include #title}
+{/block}
+
+{block content}
+<h1>{block #title}Nastavení DPH{/block}</h1>
+{snippet list}
+<table class="table dph">
+    <thead>
+        <tr>
+            <th>Sazba DPH</th>
+            <th>&nbsp;</th>
+        </tr>
+    </thead>
+    <tbody>
+        {if count($items) == 0}
+            <tr class="licha"><td colspan="2">Žádná data</td></tr>
+        {/if}
+	{assign $i => 0}
+	{foreach $items as $item}	
+		{if $i % 2 }
+                     <tr class="licha">
+                {else}
+                     <tr>
+                {/if}
+
+		<td>
+		{$item->dph} %
+                </td><td>
+		<a class="ajax delete" href="{plink Delete!, $item->id_dph}"><img alt="Smazat" src="{$basePath}/images/delete.png"></a>
+                <a href="{plink Edit, $item->id_dph}"><img alt="Upravit" src="{$basePath}/images/edit.png"></a>
+		{assign $i => $i+1}
+		</td>
+		</tr>
+	{/foreach}
+    </tbody>
+</table>
+{/snippet}
+<div id="nove_dph">
+<h2>Nová sazba DPH</h2>
+{snippet form}
+    {control pridatDph}
+{/snippet}
+</div>

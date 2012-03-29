@@ -1,0 +1,109 @@
+{block navigace}
+<a href="{plink Hlidac:default}">Hlídač objednávek</a> / <a href="{plink Automaty:default}">Správa automatů</a> / {include #title}
+{/block}
+
+{block content}
+<h1>{block #title}Nastavení automatu{/block}</h1>
+{control upravitAutomat}
+
+<div id="zakaznik_automaty">
+    <h2>Kontakty</h2>
+    <h3>Kontakty v databázi</h3>
+    {snippet formKontakty}
+        {control filtrKontakty}
+    {/snippet}
+    {snippet kontaktyVdb}
+    {control vp1}
+        <div class="kontakty_v_db">
+            <table class="table automaty_kontakty">
+                <thead>
+                    <tr>
+                        <th>Jméno</th>
+                        <th>Telefon</th>
+                        <th>Email</th>
+                        <th>Poznámka</th>
+                        <th>&nbsp;</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {if count($kontakty_v_db) == 0}
+                        <tr class="licha"><td colspan="5">Žádná data</td></tr>
+                    {/if}
+                    {assign $i => 0}
+                    {foreach $kontakty_v_db as $item}	
+                            {if $i % 2 }
+                                 <tr class="slight_border licha">
+                            {else}
+                                 <tr class="slight_border suda">
+                            {/if}
+
+                            <td>
+                            <a href="{plink Kontakty:edit, $item->id_kontakt}"><span>{$item->jmeno}</span></a>
+                            </td>
+                            <td>
+                            {$item->telefon}
+                            </td>
+                            <td>
+                            {$item->email}
+                            </td>
+                            <td>
+                            {$item->poznamka}
+                            </td>
+                            <td>
+                            <a class="ajax" href="{plink priradKontakt!, $item->id_kontakt, $id_automat}"><img alt="Přidat" src="{$basePath}/images/plus.png"></a>
+                            {assign $i => $i+1}
+                            </td>
+                            </tr>
+                    {/foreach}
+                </tbody>
+            </table> 
+        </div>
+    {/snippet}
+    <h3>Kontakty přiřazené automatu</h3>
+    {snippet listKontakty}
+        <table class="table automaty_kontakty">
+            <thead>
+                <tr>
+                    <th>Jméno</th>
+                    <th>Telefon</th>
+                    <th>Email</th>
+                    <th>Poznámka</th>
+                    <th>&nbsp;</th>
+                </tr>
+            </thead>
+            <tbody>
+                {if count($kontakty) == 0}
+                    <tr class="licha"><td colspan="5">Žádná data</td></tr>
+                {/if}
+                {assign $i => 0}
+                {foreach $kontakty as $item}	
+                        {if $i % 2 }
+                             <tr class="slight_border licha">
+                        {else}
+                             <tr class="slight_border suda">
+                        {/if}
+
+                        <td>
+                        <a href="{plink Kontakty:edit, $item->id_kontakt}">{$item->jmeno}</a>
+                        </td>
+                        <td>
+                        {$item->telefon}
+                        </td>
+                        <td>
+                        {$item->email}
+                        </td><td>
+                        {$item->poznamka}
+                        </td><td>
+                        <a class="ajax" href="{plink kontaktOdpriradit!, $item->id_automat_kontakt, $id_automat}"><img alt="Odebrat" src="{$basePath}/images/delete.png"></a>
+                        {assign $i => $i+1}
+                        </td>
+                        </tr>
+                {/foreach}
+            </tbody>
+        </table>
+    {/snippet}
+</div>
+<h3>Přiřadit úplně nový kontakt</h3>
+{snippet form}
+    {control novyKontakt}
+{/snippet}

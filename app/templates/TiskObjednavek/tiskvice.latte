@@ -1,0 +1,50 @@
+{block navigace}
+<a href="{plink Hlidac:default}">Hlídač objednávek</a> / {include #title}
+{/block}
+
+{block content}
+<h1 class="noPrint  ">{block #title}Tisk objednávky{/block}</h1>
+
+<p>Kód: {$objednavka->kod}<br/>
+Datum: {$objednavka->formatovane_datum}</p>
+<hr/>
+<p>Oblast: {$objednavka->oblast_nazev}<br/>
+Zákazník: {$objednavka->zakaznik_nazev}<br/>
+IČ: {$zakaznik->ico}
+</p>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Zboží</th>
+            <th>Počet</th>
+        </tr>
+    </thead>
+    <tbody>
+        {foreach $zbozi as $zboz}
+            <tr>
+                <td>{$zboz->nazev}</td>
+                <td>{$zboz->pocet}</td>
+            </tr>
+        {/foreach}
+    </tbody>
+</table>
+<p>
+{if count($kontakty) == 1}
+    Kontakt: <br/>
+{elseif count($kontakty) > 0}
+    Kontakty: <br/>
+{/if}
+{foreach $kontakty as $kontakt}
+    {$kontakt->jmeno} ({$kontakt->telefon})<br/>
+{/foreach}
+</p>
+<p>
+Cena bez DPH: {$objednavka->cena_bez_dph |number:2:',':' '} Kč<br/>
+Cena s DPH: {$objednavka->cena_s_dph |number:2:',':' '} Kč
+</p>
+{if $objednavka->poznamka != ""}
+    <p>Poznámka: {$objednavka->poznamka}</p>
+{/if}
+{snippet formTiskObjednavek}
+    {control tiskDalsiObjednavek}
+{/snippet}

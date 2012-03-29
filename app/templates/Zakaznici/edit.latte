@@ -1,0 +1,248 @@
+{block navigace}
+<a href="{plink Hlidac:default}">Hlídač objednávek</a> / <a href="{plink Zakaznici:default}">Správa zákazníků</a> / {include #title}
+{/block}
+
+@{block content}
+<h1>{block #title}Editace zákazníka{/block}</h1>
+{control upravitZakaznika}
+
+<div id="zakaznik_smlouvy">
+<h2>Smlouvy</h2>
+<p>Kliknutím na POC ho nastavíte jako preferovaný.</p>
+    {snippet smlouvy}
+    <table class="table zakaznik_smlouvy">
+        <thead>
+            <tr>
+                <th>Číslo smlouvy</th>
+                <th>Minimální odběr</th>
+                <th>Platnost od</th>
+                <th>Platnost do</th>
+                <th>Způsob platby</th>
+                <th>POC</th>
+                <th>&nbsp;</th>
+            </tr>
+        </thead>
+        <tbody>
+            {if count($smlouvy) == 0}
+                <tr class="licha"><td colspan="6">Žádná data</td></tr>
+            {/if}
+            {assign $i => 0}
+            {foreach $smlouvy as $item}	
+                    {if $i % 2 }
+                         <tr class="slight_border licha">
+                    {else}
+                         <tr class="slight_border suda">
+                    {/if}
+                    <td>
+                        <a href="{plink EditSmlouvy, 'id_smlouva' => $item->id_smlouva, 'id_zakaznik' => $id_zakaznik}">{$item->cislo_smlouvy}</a>
+                    </td>
+                    <td>
+                    {$item->minimalni_odber}
+                    </td>
+                    <td>
+                    {$item->od}
+                    </td>
+                    <td>
+                    {$item->do}
+                    </td>
+                    <td>
+                    {$item->zpusob_platby}
+                    </td>
+                    <td>
+                    {if isset($item->poc)}
+                        <a class="ajax" href="{plink SwitchPOC!, $item->id_smlouva, $id_zakaznik, $item->preferovany_poc}">
+                        {if $item->preferovany_poc == true}
+                            {$item->poc} (odp.)
+                        {else}
+                            {$item->poc}
+                        {/if}
+                        </a>
+                    {/if}
+                    </td>
+                    <td>
+                    <a class="ajax" href="{link DeleteSmlouva!, 'id_smlouva' => $item->id_smlouva, 'id_zakaznik' => $id_zakaznik}"><img alt="Smazat" src="{$basePath}/images/delete.png"></a>
+                    <a href="{plink EditSmlouvy, 'id_smlouva' => $item->id_smlouva, 'id_zakaznik' => $id_zakaznik}"><img alt="Upravit" src="{$basePath}/images/edit.png"></a>
+                    {assign $i => $i+1}
+                    </td>
+                    </tr>
+            {/foreach}
+        </tbody>
+    </table>
+    {/snippet}
+    <div id="nova_smlouva">
+    <h2>Přidání nové smlouvy</h2>
+        {snippet formSmlouvy}
+            {control pridatSmlouvu}
+        {/snippet}
+    </div>
+</div>
+
+<script type="text/javascript">
+var a;
+
+$('.query').live('keydown',function(){
+    a=$(this).autocomplete({ serviceUrl: {link autoComplete!}});
+});
+</script>
+
+
+<div id="zakaznik_zbozi">
+<h2>Odebírané zboží</h2>
+{snippet formZbozi}
+    <div class="naseptavac">
+        {control pridatZbozi}
+    </div>
+{/snippet}
+{snippet listZbozi}
+    <table class="table zakaznik_zbozi">
+        <thead>
+            <tr>
+                <th>Zkratka</th>
+                <th>Název</th>
+                <th>Nákupní cena</th>
+                <th>Prodejní cena</th>
+                <th>Podle smlouvy</th>
+                <th>&nbsp;</th>
+            </tr>
+        </thead>
+        <tbody>
+            {if count($zbozi) == 0}
+                <tr class="licha"><td colspan="6">Žádná data</td></tr>
+            {/if}
+
+            {assign $i => 0}
+            {foreach $zbozi as $item}	
+                    {if $i % 2 }
+                         <tr class="slight_border licha">
+                    {else}
+                         <tr class="slight_border suda">
+                    {/if}
+
+                    <td>
+                    {$item->zkratka}
+                    <td>
+                    {$item->nazev}
+                    </td>
+                    <td>
+                    {$item->nakupni_cena}
+                    </td><td>
+                    {$item->prodejni_cena}
+                    </td><td>
+                    <a class="ajax" href="{plink SwitchVeSmlouve!, $item->id_zakaznici_zbozi, $id_zakaznik, $item->ve_smlouve}">{if $item->ve_smlouve==1}Ano{else}Ne{/if}</a>
+                    </td><td>
+                    <a class="ajax" href="{plink DeleteZbozi!, $item->id_zakaznici_zbozi, $id_zakaznik}"><img alt="Smazat" src="{$basePath}/images/delete.png"></a>
+                    {assign $i => $i+1}
+                    </td>
+                    </tr>
+            {/foreach}
+        </tbody>
+    </table>
+</div>
+{/snippet}
+
+<div id="zakaznik_automaty">
+<h2>Automaty u zákazníka</h2>
+    {snippet listAutomaty}
+    {control vp2}
+        <table class="table zakaznik_automaty">
+            <thead>
+                <tr>
+                    <th>BMB</th>
+                    <th>Výrobní číslo</th>
+                    <th>Název</th>
+                    <th>Adresa</th>
+                    <th>Oblast</th>
+                    <th>&nbsp;</th>
+                </tr>
+            </thead>
+            <tbody>
+                {if count($automaty_zakaznika) == 0}
+                    <tr class="licha"><td colspan="6">Žádná data</td></tr>
+                {/if}
+
+                {assign $i => 0}
+                {foreach $automaty_zakaznika as $item}	
+                        {if $i % 2 }
+                             <tr class="slight_border licha">
+                        {else}
+                             <tr class="slight_border suda">
+                        {/if}
+
+                        <td>
+                        {$item->bmb}
+                        </td>
+                        <td>
+                        {$item->vyrobni_cislo}
+                        </td>
+                        <td>
+                        <a href="{plink Automaty:edit, $item->id_automat}">{$item->nazev}</a>
+                        </td>
+                        <td>
+                        {$item->adresa}
+                        </td><td>
+                        {$item->oblast_nazev}
+                        </td><td>
+                        <a class="ajax" href="{plink automatDoSkladu!, $item->id_automat, $id_zakaznik}"><img alt="Odebrat" src="{$basePath}/images/delete.png"></a>
+                        {assign $i => $i+1}
+                        </td>
+                        </tr>
+                {/foreach}
+            </tbody>
+        </table>
+    {/snippet}
+    <h2>Automaty na Sklade</h2>
+    {snippet formAutomaty}
+        {control filtrAutomaty}
+    {/snippet}
+    {snippet automatySkladem}
+    {control vp1}
+        <div class="automaty_skladem">
+            <table class="table zakaznik_automaty">
+                <thead>
+                    <tr>
+                        <th>BMB</th>
+                        <th>Výrobní číslo</th>
+                        <th>Název</th>
+                        <th>Adresa</th>
+                        <th>Oblast</th>
+                        <th>&nbsp;</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {if count($automaty_skladem) == 0}
+                        <tr class="licha"><td colspan="6">Žádná data</td></tr>
+                    {/if}
+                    {assign $i => 0}
+                    {foreach $automaty_skladem as $item}	
+                            {if $i % 2 }
+                                 <tr class="slight_border licha">
+                            {else}
+                                 <tr class="slight_border suda">
+                            {/if}
+
+                            <td>
+                            {$item->bmb}
+                            </td>
+                            <td>
+                            {$item->vyrobni_cislo}
+                            </td>
+                            <td>
+                            <a href="{plink Automaty:edit, $item->id_automat}">{$item->nazev}</a>
+                            </td>
+                            <td>
+                            {$item->adresa}
+                            </td>
+                            <td>
+                            {$item->oblast_nazev}
+                            </td>
+                            <td>
+                            <a class="ajax" href="{plink priradAutomat!, $item->id_automat, $id_zakaznik}"><img alt="Přiřadit" src="{$basePath}/images/plus.png"></a>
+                            {assign $i => $i+1}
+                            </td>
+                            </tr>
+                    {/foreach}
+                </tbody>
+            </table> 
+        </div>
+    {/snippet}
+</div>

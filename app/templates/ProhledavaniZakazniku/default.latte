@@ -1,0 +1,51 @@
+{block navigace}
+<a href="{plink Hlidac:default}">Hlídač objednávek</a> / {include #title}
+{/block}
+
+{block content}
+<h1>{block #title}Prohledávání zákazníků{/block}</h1>
+<p>V tabulce je zobrazen seznam zákazníků. Kliknutím na jméno zákazníka vytvoříte objednávku. Pokud má zákazník vyplněný email, můžete mu poslat rovnou zprávu.</p>
+<p>Pomocí tlačítka filtrovat můžete vyhledat zákazníka podle jeho jména.</p>
+{snippet formZakaznici}
+    {control filtrZakaznici}
+{/snippet}
+{snippet stranky}
+{control vp}
+<table class="table prohledavani_zakazniku">
+    <thead>
+        <tr>
+            <th>Název</th>
+            <th>Adresa</th>
+            <th>email</th>
+        </tr>
+    </thead>
+    <tbody>
+        {if count($items) == 1}
+            <tr class="licha"><td colspan="3">Žádná data</td></tr>
+        {/if}
+	{assign $i => 0}
+	{foreach $items as $item}	
+            {if $item->id_zakaznik != 0}
+		{if $i % 2 }
+                     <tr class="slight_border licha">
+                {else}
+                     <tr class="slight_border suda">
+                {/if}
+
+		<td>
+		<a href="{plink Objednavky:default, $item->id_zakaznik}">{$item->nazev}</a>
+		<td>
+		{$item->adresa}
+                </td>
+		<td>
+                {if $item->email != ""}
+                    <a href="mailto:{$item->email}">{$item->email}</a>
+                {/if}
+                </td>
+		{assign $i => $i+1}
+		</tr>
+            {/if}
+	{/foreach}
+    </tbody>
+</table>
+{/snippet}

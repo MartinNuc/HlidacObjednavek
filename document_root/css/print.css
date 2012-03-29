@@ -1,0 +1,91 @@
+body {
+	font: 12pt/1.4 "Trebuchet MS", "Geneva CE", lucida, sans-serif;
+	color: black;
+	background: none;
+	width: 100%;
+        
+}
+a:link, a:visited {
+text-decoration: none;
+color: black;
+}
+a img { border: none; }
+
+#menu { display: none}
+.paginator { display: none}
+#admin_menu { display: none}
+#navigace { display: none}
+#login_info { display: none}
+#snippet--formZakaznici { display:none}
+#snippet--formAutomaty {display: none}
+#snippet--formZbozi {display: none}
+#snippet--formObjednavky {display: none}
+#snippet--formTiskObjednavek {display:none}
+.noPrint {display: none}
+#nette-debug {display:none}
+
+.pgbreak {
+    page-break-inside: avoid;page-break-before: auto;page-break-after: auto;
+}
+
+h1 {
+        font-family: "Lucida Sans Unicode", "Lucida Grande", Sans-Serif;
+	font-size: 16px;
+        color: black;
+	text-align: left;  
+}
+
+.table {	
+        font-family: "Lucida Sans Unicode", "Lucida Grande", Sans-Serif;
+	font-size: 12px;
+	background: #fff;
+	width: 75%;
+	border-collapse: collapse;
+	text-align: left;
+        border: 3px solid black;
+        page-break-inside:auto
+}
+
+tr    { page-break-inside:avoid; page-break-after:auto }
+thead { display:table-header-group }
+tfoot { display:table-footer-group }
+
+
+ th
+{
+	font-size: 14px;
+	font-weight: normal;
+	color: black;
+	padding: 10px 8px;
+	border-bottom: 2px solid black;
+}
+ td
+{
+	color: black;
+	/*padding: 9px 8px 0px 8px;*/
+}
+
+.zakaznik {
+    margin-top: 2em;
+    padding-top: 2em;
+    border-top: 3px solid black;
+    border-bottom: 1px solid black;
+    border-right: 1px solid black;
+    border-left: 1px solid black;
+}
+
+.sloupeczbozi {
+    border: 1px solid black;
+}
+
+tbody tr:hover td
+{
+	color: black;
+}
+
+
+
+
+#ajax-spinner {
+	display: none;
+}

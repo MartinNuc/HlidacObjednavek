@@ -1,0 +1,53 @@
+{block navigace}
+<a href="{plink Hlidac:default}">Hlídač objednávek</a> / {include #title}
+{/block}
+
+{block content}
+<h1 class="noPrint  ">{block #title}Tisk objednávky{/block}</h1>
+{foreach $objednavky as $objednavka}
+<div class="pgbreak">
+    <p>Kód: {$objednavka->kod}<br/>
+    Datum: {$objednavka->formatovane_datum}<br/>
+    </p>
+    <hr/>
+    <p>
+    Oblast: {$objednavka->oblast_nazev}<br/>
+    Zákazník: {$objednavka->zakaznik_nazev}<br/>
+    IČ: {$zakaznik[$objednavka->id_objednavka]}</p>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Zboží</th>
+                <th>Počet</th>
+            </tr>
+        </thead>
+        <tbody>
+            {foreach $zbozi[$objednavka->id_objednavka] as $zboz}
+                <tr>
+                    <td>{$zboz->nazev}</td>
+                    <td>{$zboz->pocet}</td>
+                </tr>
+            {/foreach}
+        </tbody>
+    </table>
+    <p>
+    {if count($kontakty[$objednavka->id_objednavka]) == 1}
+        Kontakt: <br/>
+    {elseif count($kontakty[$objednavka->id_objednavka]) > 0}
+        Kontakty: <br/>
+    {/if}
+    {foreach $kontakty[$objednavka->id_objednavka] as $kontakt}
+        {$kontakt->jmeno} ({$kontakt->telefon})<br/>
+    {/foreach}
+    </p>
+    <p>Cena bez DPH: {$objednavka->cena_bez_dph |number:2:',':' '} Kč<br/>
+    Cena s DPH: {$objednavka->cena_s_dph |number:2:',':' '} Kč</p>
+    {if $objednavka->pozn != ""}
+        <p>Poznámka: {$objednavka->pozn}</p>
+    {/if}
+    <hr/><hr/>
+</div>
+{/foreach}
+{snippet formObjednavky}
+    {control tiskObjednavky}
+{/snippet}

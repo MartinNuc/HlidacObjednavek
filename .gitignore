@@ -1,2 +1,3 @@
-/temp/
-/log/
+/temp/*
+/log/*
+/app/config.neon

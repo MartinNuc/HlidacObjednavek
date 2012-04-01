@@ -16,7 +16,7 @@ common:
 
                 database:
                         class: Nette\Database\Connection
-                        arguments: ['mysql:host=localhost;dbname=hlidacobjednavek', 'root', 'okno']
+                        arguments: ['mysql:host=localhost;dbname=hlidacobjednavek', 'root', 'password']
 
                 model:
                         class: Model
@@ -32,7 +32,7 @@ production < common:
         host: localhost
         database: hlidacobjednavek
         username: root
-        password: okno
+        password: password
         profiler: TRUE
         charset: utf8
 
@@ -42,7 +42,7 @@ development < common:
         host: localhost
         database: hlidacobjednavek
         username: root
-        password: okno
+        password: password
         profiler: TRUE
         charset: utf8
 console < common:

@@ -1,2 +1,76 @@
+{block navigace}
+<a href="{plink Hlidac:default}">Trasy</a> / <a href="{plink Vystupy:default}">Tiskové výstupy</a> / {include #title}
+{/block}
 
 {block content}
+<h1>{block #title}Trasy{/block}</h1>
+<p class="noPrint">Vyberte z každé skupiny alespoň jednu volbu.</p>
+{snippet formZakaznici}
+    {control filtrTrasy}
+{/snippet}
+
+{snippet strankyLong}
+<table class="table">
+    <colgroup>
+        {foreach $zbozi as $item}
+            <col class="sloupeczbozi" />
+        {/foreach}
+    </colgroup>
+
+    <thead>
+        <tr>
+            <th>Č. trasy</th>
+            <th>Kdy</th>
+            <th>Kdo</th>
+            <th>Adresa</th>
+            {foreach $zbozi as $item}
+                <th>{$item->zkratka}</th>
+            {/foreach}
+            <th>Poznámka</th>
+            <th>Telefon</th>
+            <th>IČ</th>
+        </tr>
+    </thead>
+    <tbody>
+        {if count($objednavky) == 0}
+            <tr class="licha"><td colspan="{count($zbozi)+8}">Žádná data</td></tr>
+        {/if}
+	{assign $i => 0}
+	{foreach $objednavky as $objednavka}
+            {if $i % 2 }
+                 <tr class="slight_border zakaznik licha">
+            {else}
+                 <tr class="slight_border zakaznik suda">
+            {/if}
+            <td>
+                {$objednavka->oblast_nazev}
+            </td>
+            <td>
+                {$objednavka->formatovane_datum}
+            </td>
+            <td>
+                {$objednavka->zakaznik_nazev}
+            </td>
+            <td>
+                {$objednavka->adresa}
+            </td>
+            {foreach $zbozi as $item}
+                <td>
+                    {$zbozi_obj[$objednavka->id_objednavka][$item->id_zbozi]}
+                </td>
+            {/foreach}
+            <td>
+                {$objednavka->poznamka}
+            </td>
+            <td>
+                {$objednavka->telefon}
+            </td>
+            <td>
+                {$objednavka->ico}
+            </td>
+            </tr>
+            {assign $i => $i+1}
+	{/foreach}
+    </tbody>
+</table>
+{/snippet}

@@ -87,7 +87,6 @@ class VystupyPresenter extends BasePresenter {
         }
     }
 
-
     public function actionZbozi() {
         
     }
@@ -301,6 +300,38 @@ class VystupyPresenter extends BasePresenter {
         return $form;
     }
     
+    public function createComponentFiltrTrasy($name)
+    {
+        $form = new Form($this, $name);
+        $form->getElementPrototype()->class('ajax');
+        /*$renderer = $form->getRenderer();
+        $renderer->wrappers['controls']['container'] = NULL;
+        $renderer->wrappers['label']['container'] = NULL;
+        $renderer->wrappers['control']['container'] = NULL;
+        $renderer->wrappers['pair']['container'] = \Nette\Utils\Html::el('div');*/
+
+        $form->addGroup("")->setOption('container', Html::el('div')->class('tisk_oblasti'));
+        $oblasti = $this->oblastiModel->getOblasti();
+        foreach ($oblasti as $oblast)
+            if ($oblast->id_oblast != 0)
+                $form->addCheckbox('oblast_' . $oblast->id_oblast, $oblast->nazev)->setDefaultValue(false);
+
+        $form->addGroup("")->setOption('container', Html::el('div')->class('tisk_datum'));
+        $form->addDatePicker('od', "Od")
+            ->addRule(Form::VALID, 'Zadané datum není platné.')->setDefaultValue(Date('d. m. Y',mktime(0,0,0,date('m'),date('d'),date('y'))));
+        $this->filtr_od = Date('j-n-Y',mktime(0,0,0,date('m'),date('d'),date('y')));
+        $form->addDatePicker('doo', "Do")
+            ->addRule(Form::VALID, 'Zadané datum není platné.')->setDefaultValue(Date('d. m. Y'));
+        $this->filtr_do = Date('j-n-Y');
+        
+        $form->addGroup("")->setOption('container', Html::el('div')->class('tisk_tlacitka'));
+        $form->addSubmit('filtrZakaznici', 'Nastavit kritéria');
+        $form->addButton('print', 'Tisk')->getControlPrototype()->class("print");
+        $form->onSuccess[] = callback($this, 'filtrTrasy_submit');
+        return $form;
+    }
+
+    
     /**
      * Button for filtering customers
      * @param type $form name of form
@@ -355,6 +386,92 @@ class VystupyPresenter extends BasePresenter {
         else {
             $this->invalidateControl('strankyLong');
         }
+    }
+    
+    public function filtrTrasy_submit($form)
+    {
+        $datum = $form['od']->getValue();
+        if ($datum == "")
+            $this->filtr_od = NULL;
+        else
+            $this->filtr_od = $datum->format("Y-n-j");
+        
+        $datum = $form['doo']->getValue();
+        if ($datum == "")
+            $this->filtr_do = NULL;
+        else
+            $this->filtr_do = $datum->format("Y-n-j");
+
+        $oblasti = $this->oblastiModel->getOblasti();
+        foreach ($oblasti as $oblast)
+            if ($oblast->id_oblast != 0)
+                if ($form['oblast_' . $oblast->id_oblast]->getValue() == true)
+                    $this->oblasti[] = $oblast->id_oblast;
+
+        if (!$this->isAjax())
+            $this->redirect('Vystupy:trasy');
+        else {
+            $this->invalidateControl('strankyLong');
+        }
+    }
+    
+    public function actionTrasy() {
+        $this->filtr_od = Date('j-n-Y',mktime(0,0,0,date('m'),date('d'),date('y')));
+        $this->filtr_do = Date('j-n-Y',mktime(0,0,0,date('m'),date('d'),date('y')));
+    }
+
+    public function renderTrasy() {
+        if (!$this->getUser()->isLoggedIn())
+            $this->redirect('sign:in');
+
+        $filtr_oblasti = "";
+        foreach ($this->oblasti as $oblast)
+        {
+            if ($this->oblasti[0] == $oblast)
+                $filtr_oblasti .= "id_oblast IN (" . $oblast;
+            else
+                $filtr_oblasti .= "," . $oblast;
+        }
+        if ($filtr_oblasti != "")
+            $filtr_oblasti .= ")";
+        else
+            $filtr_oblasti = "id_oblast=-1";
+
+        $objednavky = array();
+        $objednavky = $this->objednavkyModel->getObjednavkyTrasy(array("id_kategorie" => "ASC","zkratka" => "ASC"), NULL, NULL, NULL, $this->filtr_od, $this->filtr_do, $filtr_oblasti);
+        
+        $zbozi = array();
+        $zbozi = $this->zboziModel->getZbozi();
+        $zbozi_cnt = array();
+        foreach ($zbozi as $zboz)
+            $zbozi_cnt[$zboz->id_zbozi] = 0;
+        $zbozi_cnt2 = $zbozi_cnt;
+        $zbozi_obj = array();
+        foreach ($objednavky as $objednavka)
+        {
+            // najdeme zbozi z objednavky
+            $temp = $this -> zboziModel -> getZboziOdDo($order = array(
+                'zkratka' => 'ASC'), array("id_objednavka" => $objednavka->id_objednavka), $this->filtr_od, $this->filtr_do);
+            $zbozi_obj[$objednavka->id_objednavka] = $zbozi_cnt;
+            foreach ($temp as $zboz)
+            {
+                $zbozi_obj[$objednavka->id_objednavka][$zboz->id_zbozi] += $zboz->pocet;
+                $zbozi_cnt2[$zboz->id_zbozi]++;
+            }
+        }
+        $zbozi_output = array();
+        foreach ($zbozi as $zboz)
+        {
+            if ($zbozi_cnt2[$zboz->id_zbozi] > 0)
+                $zbozi_output[] = $zboz;
+        }
+        
+        $this->template->zbozi = $zbozi_output;
+        $this->template->objednavky = $objednavky;
+        $this->template->zbozi_obj = $zbozi_obj;
+
+        if ($this->isAjax())
+            $this->invalidateControl('strankyLong');
     }
     
     public function actionZakaznici() {

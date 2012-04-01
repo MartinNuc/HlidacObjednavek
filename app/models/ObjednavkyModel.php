@@ -118,6 +118,35 @@ class ObjednavkyModel
              return NULL;
         }
         
+        public function getObjednavkyTrasy($order = NULL, $where = NULL, $offset = NULL, $limit = NULL, $od = NULL, $do = NULL, $filtr_oblasti = NULL)
+        {
+            try {
+             $ret = dibi::query(
+                        'SELECT DISTINCT date_format(objednavky.datum, "%e. %c. %Y") as formatovane_datum, zakaznici.nazev as zakaznik_nazev, zakaznici.telefon, zakaznici.adresa, zakaznici.hidden as zakaznik_hidden, zakaznici.ico, oblasti.nazev as oblast_nazev, smlouvy.*, objednavky.* 
+                            FROM [objednavky] 
+                            LEFT JOIN [zakaznici] USING (id_zakaznik) 
+                            LEFT JOIN [smlouvy] USING (id_zakaznik) 
+                            LEFT JOIN [oblasti] USING (id_oblast)
+                            LEFT JOIN [zbozi_objednavky] USING (id_objednavka)
+                            LEFT JOIN [zbozi] USING (id_zbozi)
+                            WHERE 1=1
+                         %if', isset($where), ' AND %and', isset($where) ? $where : array(), '%end',
+                        '%if', isset($od), ' AND datum>="' . $od . '" %end',
+                        '%if', isset($do), ' AND datum<="' . $do . '" %end',
+                        '%if', isset($filtr_oblasti), isset($filtr_oblasti) ? "AND (objednavky.".$filtr_oblasti.")" : "", '%end ',
+                        '%if', isset($order), 'ORDER BY %by', $order, '%end',
+                        '%if', isset($limit), 'LIMIT %i %end', $limit,
+                        '%if', isset($offset), 'OFFSET %i %end', $offset
+                    )->setRowClass('Objednavka');
+             return $ret;
+            }
+            catch (DibiException $e)
+            {
+                Debugger::log("getObjednavkyExport: " . Dibi::$sql);
+            }
+             return NULL;
+        }
+        
         /**
          * Searches orders by validation date
          * @param array $order Order of the output

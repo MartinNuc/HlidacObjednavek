@@ -115,10 +115,14 @@ class ZakazniciModel
                         IN (
                           SELECT id_zakaznik
                           FROM objednavky WHERE datum>"' . $datum . '")
+                        AND  id_zakaznik IN (
+                          SELECT id_zakaznik
+                          FROM automaty)
                           GROUP BY nazev ORDER BY datum ASC ', 
                         '%if', isset($limit), 'LIMIT %i %end', $limit,
                         '%if', isset($offset), 'OFFSET %i %end', $offset
                      )->setRowClass('Objednavka');
+             Debugger::log(dibi::$sql);
              return $res;
         }
     

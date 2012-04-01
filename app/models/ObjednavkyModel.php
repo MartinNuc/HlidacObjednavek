@@ -42,7 +42,7 @@ class ObjednavkyModel
          * @param int $limit used for paging
          * @return DibiResult result 
          */
-        public function getObjednavkyHledani($order = NULL, $where = NULL, $offset = NULL, $limit = NULL)
+        public function getObjednavkyHledani($order = NULL, $where = NULL, $offset = NULL, $limit = NULL, $filtr_zakaznik = NULL)
         {
             $and = array();
             $and[] = array( '%b', true );
@@ -53,6 +53,7 @@ class ObjednavkyModel
              return dibi::query(
                         'SELECT date_format(objednavky.datum, "%e. %c. %Y") as formatovane_datum, zakaznici.nazev as zakaznik_nazev, zakaznici.hidden as zakaznik_hidden, oblasti.nazev as oblast_nazev, objednavky.* FROM [objednavky] LEFT JOIN [zakaznici] USING (id_zakaznik) LEFT JOIN [oblasti] USING (id_oblast) WHERE 
                          %if', isset($where), ' %and', isset($and) ? $and : array(), '%end',
+                        '%if', isset($filtr_zakaznik) && $filtr_zakaznik!="", ' AND zakaznici.nazev LIKE %s', isset($filtr_zakaznik) ? "%" .$filtr_zakaznik."%" : '', '%end',
                         '%if', isset($order), 'ORDER BY %by', $order, '%end',
                         '%if', isset($limit), 'LIMIT %i %end', $limit,
                         '%if', isset($offset), 'OFFSET %i %end', $offset

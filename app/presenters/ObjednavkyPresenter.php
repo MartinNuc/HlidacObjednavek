@@ -29,6 +29,8 @@ class ObjednavkyPresenter extends BasePresenter {
     /** @persistent */
     public $filtr_bmb = '';
     /** @persistent */
+    public $filtr_zakaznik = '';
+    /** @persistent */
     public $filtr_vyrobni_cislo = '';
     
     private $zisk = 0;
@@ -1104,6 +1106,7 @@ class ObjednavkyPresenter extends BasePresenter {
         
         $form->addText('kod', 'Kód:')->setAttribute('autoComplete', "off");
         $form->addText('bmb', 'BMB:')->setAttribute('autoComplete', "off");
+        $form->addText('zakaznik', 'Zákazník:')->setAttribute('autoComplete', "off");
         $form->addText('vyrobni_cislo', 'Výrobní číslo automatu:')->setAttribute('autoComplete', "off");
         $form->addSubmit('filtrZbozi', 'Vyhledat');
         $form->onSuccess[] = callback($this, 'filtrObjednavek_submit');
@@ -1118,6 +1121,8 @@ class ObjednavkyPresenter extends BasePresenter {
     {
         $this->filtr_objednavky = $form['kod']->getValue();
         $this->filtr_bmb = $form['bmb']->getValue();
+        $this->filtr_zakaznik = $form['zakaznik']->getValue();
+        
         $this->filtr_vyrobni_cislo = $form['vyrobni_cislo']->getValue();
 
         if (!$this->isAjax())
@@ -1166,12 +1171,12 @@ class ObjednavkyPresenter extends BasePresenter {
                 'datum' => 'DESC', "kod" => "DESC"), array("objednavky.hledani_bmb" => $this->filtr_bmb,
                     "objednavky.hledani_vyrobni_cislo" => $this->filtr_vyrobni_cislo,
                     "objednavky.kod" => $this->filtr_objednavky),
-                $paginator->offset, $paginator->itemsPerPage));
+                $paginator->offset, $paginator->itemsPerPage, $this->filtr_zakaznik));
         $items = $this -> model -> getObjednavkyHledani($order = array(
                 'datum' => 'DESC', "kod" => "DESC"), array("objednavky.hledani_bmb" => $this->filtr_bmb,
                     "objednavky.hledani_vyrobni_cislo" => $this->filtr_vyrobni_cislo,
                     "objednavky.kod" => $this->filtr_objednavky),
-                $paginator->offset, $paginator->itemsPerPage);
+                $paginator->offset, $paginator->itemsPerPage, $this->filtr_zakaznik);
         
         $this->template->items = $items;
         if ($this->isAjax())

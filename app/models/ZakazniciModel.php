@@ -152,7 +152,7 @@ class ZakazniciModel
                     // neplatici
                     $res = dibi::query(
                          'SELECT DISTINCT nazev, id_zakaznik FROM [zakaznici] LEFT JOIN objednavky USING (id_zakaznik)
-                            WHERE 1=1',
+                            WHERE zakaznici.hidden=0 ',
                             '%if', isset($where), 'AND %and', isset($where) ? $where : array(), '%end',
                             '%if', isset($filtr_oblasti), isset($filtr_oblasti) ? "AND (".$filtr_oblasti.")" : "", '%end ',
                             ' AND NOT id_zakaznik=0 AND id_zakaznik NOT

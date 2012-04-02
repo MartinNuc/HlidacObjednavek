@@ -72,10 +72,10 @@ class ExportPresenter extends BasePresenter {
         //$smlouvy = $this -> smlouvyModel -> getSmlouvy(array("do" => "DSC"), array('id_zakaznik' => $id_zakaznik, array("do > %s", date("Y-m-d"))));
 
         $zakaznici = $this->zakazniciModel->getZakaznikyContext(NULL, array("osobni_zakaznik" => 0, array("id_zakaznik > %i", 0)));
+        $zbozi = $this->zboziModel->getZbozi(NULL, array("nestle" => 1));
         foreach ($zakaznici as $zakaznik)
         {
             $objPHPExcel->getActiveSheet()->getStyle('A' . $i . ':M' . $i)->getBorders()->getTop()->setBorderStyle(PHPExcel_Style_Border::BORDER_MEDIUM);
-            $zbozi = $this->zboziModel->getZbozi(NULL, array("nestle" => 1));
             foreach ($zbozi as $zboz)
             {
                 $posledni = $this->model->getObjednavkyOdDo(array("datum" => "DSC"),
@@ -85,14 +85,11 @@ class ExportPresenter extends BasePresenter {
                 if ($posledni == false)
                     $posledni = "";
 
-                $soucet = 0;
-                $data = $this->model->getObjednavkyExport(NULL,
+                $soucet = $this->model->getObjednavkyExport(NULL,
                                         array("id_zakaznik" => $zakaznik->id_zakaznik, "id_zbozi" => $zboz->id_zbozi),
-                                        NULL, NULL, $od, $do);
-                foreach ($data as $item)
-                {
-                    $soucet+=$item->pocet;
-                }
+                                        NULL, NULL, $od, $do)->fetchSingle();
+                if ($soucet == false)
+                    $soucet=0;
                 $objPHPExcel->getActiveSheet()->SetCellValue('C' . $i, date('Ymd'));
                 $objPHPExcel->getActiveSheet()->SetCellValue('D' . $i, date('His'));
                 /*

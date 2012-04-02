@@ -95,7 +95,7 @@ class ObjednavkyModel
         {
             try {
              $ret = dibi::query(
-                        'SELECT date_format(objednavky.datum, "%e. %c. %Y") as formatovane_datum,zbozi.nazev as nazev_zbozi, zbozi_objednavky.pocet as pocet, zbozi.nakupni_cena as nakupni_cena, zakaznici.nazev as zakaznik_nazev, zakaznici.hidden as zakaznik_hidden, oblasti.nazev as oblast_nazev, smlouvy.*, objednavky.* 
+                        'SELECT SUM(pocet) 
                             FROM [objednavky] 
                             LEFT JOIN [zakaznici] USING (id_zakaznik) 
                             LEFT JOIN [smlouvy] USING (id_zakaznik) 
@@ -143,7 +143,7 @@ class ObjednavkyModel
             }
             catch (DibiException $e)
             {
-                Debugger::log("getObjednavkyExport: " . Dibi::$sql);
+                Debugger::log("getObjednavkyTrasy: " . Dibi::$sql);
             }
              return NULL;
         }

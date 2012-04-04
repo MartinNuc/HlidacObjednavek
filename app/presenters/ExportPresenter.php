@@ -71,7 +71,7 @@ class ExportPresenter extends BasePresenter {
         $i = 3;
         //$smlouvy = $this -> smlouvyModel -> getSmlouvy(array("do" => "DSC"), array('id_zakaznik' => $id_zakaznik, array("do > %s", date("Y-m-d"))));
 
-        $zakaznici = $this->zakazniciModel->getZakaznikyContext(NULL, array("osobni_zakaznik" => 0, array("id_zakaznik > %i", 0)));
+        $zakaznici = $this->zakazniciModel->getZakaznikyContext(array("zakaznici.nazev" => "ASC"), array("osobni_zakaznik" => 0, array("id_zakaznik > %i", 0)));
         $zbozi = $this->zboziModel->getZbozi(NULL, array("nestle" => 1));
         foreach ($zakaznici as $zakaznik)
         {
@@ -86,7 +86,7 @@ class ExportPresenter extends BasePresenter {
                     $posledni = "";
 
                 $soucet = $this->model->getObjednavkyExport(NULL,
-                                        array("id_zakaznik" => $zakaznik->id_zakaznik, "id_zbozi" => $zboz->id_zbozi),
+                                        array("id_zakaznik" => $zakaznik->id_zakaznik, "id_zbozi" => $zboz->id_zbozi, "objednavky.id_smlouva" => $zakaznik->id_smlouva),
                                         NULL, NULL, $od, $do)->fetchSingle();
                 if ($soucet == false)
                     $soucet=0;

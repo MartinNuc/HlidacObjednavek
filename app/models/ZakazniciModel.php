@@ -30,16 +30,23 @@ class ZakazniciModel
         
         public function getZakaznikyContext($order = NULL, $where = NULL, $offset = NULL, $limit = NULL, $filtrLike = NULL)
         {
-             return dibi::query(
-                        'SELECT * FROM [zakaznici] 
-                            LEFT JOIN [smlouvy] USING (id_zakaznik)
-                            WHERE hidden=0 
-                         %if', isset($where), 'AND %and', isset($where) ? $where : array(), '%end',
-                        '%if', isset($filtrLike) && $filtrLike!="", ' AND nazev LIKE %s', isset($filtrLike) ? "%" .$filtrLike."%" : '', '%end',
-                        '%if', isset($order), 'ORDER BY %by', $order, '%end',
-                        '%if', isset($limit), 'LIMIT %i %end', $limit,
-                        '%if', isset($offset), 'OFFSET %i %end', $offset
-                    )->setRowClass('Zakaznik');
+            try {
+                 $res = dibi::query(
+                            'SELECT * FROM [zakaznici] 
+                                LEFT JOIN [smlouvy] USING (id_zakaznik)
+                                WHERE hidden=0 
+                             %if', isset($where), 'AND %and', isset($where) ? $where : array(), '%end',
+                            '%if', isset($filtrLike) && $filtrLike!="", ' AND nazev LIKE %s', isset($filtrLike) ? "%" .$filtrLike."%" : '', '%end',
+                            '%if', isset($order), 'ORDER BY %by', $order, '%end',
+                            '%if', isset($limit), 'LIMIT %i %end', $limit,
+                            '%if', isset($offset), 'OFFSET %i %end', $offset
+                        )->setRowClass('Zakaznik');
+                 return $res;
+            }
+            catch (DibiException $e)
+            {
+                Debugger::log("getZakaznikyContext: " . dibi::$sql);
+            }
         }
         
         /**

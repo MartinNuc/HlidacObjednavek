@@ -122,7 +122,6 @@ class ZakazniciModel
                         '%if', isset($limit), 'LIMIT %i %end', $limit,
                         '%if', isset($offset), 'OFFSET %i %end', $offset
                      )->setRowClass('Objednavka');
-             Debugger::log(dibi::$sql);
              return $res;
         }
     

@@ -98,7 +98,6 @@ class ObjednavkyModel
                         'SELECT SUM(pocet) 
                             FROM [objednavky] 
                             LEFT JOIN [zakaznici] USING (id_zakaznik) 
-                            LEFT JOIN [smlouvy] USING (id_zakaznik) 
                             LEFT JOIN [oblasti] USING (id_oblast)
                             LEFT JOIN [zbozi_objednavky] USING (id_objednavka)
                             LEFT JOIN [zbozi] USING (id_zbozi)

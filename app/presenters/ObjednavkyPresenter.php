@@ -108,7 +108,6 @@ class ObjednavkyPresenter extends BasePresenter {
             $pole[$value->id_smlouva]=$value->poc;
         $form->addSelect('id_smlouva', 'POC:', $pole)->setDefaultValue($pref);
         
-        //$form->addSubmit('prepocitat', 'Přepočítat cenu')->onClick[] = callback($this, 'prepocitatCenu_submit');
         $recalc = $form->addSubmit('prepocitat', 'Přepočítat cenu');        
         $recalc->onClick[] = callback($this, 'prepocitatCenu_submit');
         $recalc->getControlPrototype()->class('hidden');
@@ -353,11 +352,9 @@ class ObjednavkyPresenter extends BasePresenter {
         $renderer->wrappers['pair']['container'] = \Nette\Utils\Html::el('div')->class('obj_filtr');
         
         $form->addDatePicker('od', "Od")
-            ->addRule(Form::VALID, 'Zadané datum není platné.')->setDefaultValue(Date('d. m. Y',mktime(0,0,0,date('m')-5,date('d'),date('y'))));
-        $this->filtr_od = Date('j-n-Y',mktime(0,0,0,date('m')-5,date('d'),date('y')));
+            ->addRule(Form::VALID, 'Zadané datum není platné.')->setDefaultValue(Date('d. m. Y',strtotime($this->filtr_od)));
         $form->addDatePicker('do', "Do")
             ->addRule(Form::VALID, 'Zadané datum není platné.')->setDefaultValue(Date('d. m. Y'));
-        $this->filtr_do = Date('j-n-Y');
 
         $form->addSubmit('filtrObjednavky', 'Zobrazit objednávky');
         $form->onSuccess[] = callback($this, 'filtrObjednavky_submit');
@@ -413,7 +410,12 @@ class ObjednavkyPresenter extends BasePresenter {
         
         if ($id_oblast != NULL)
             $this->template->id_oblast = $id_oblast;
-                
+             
+        if ((isset($this->filtr_od) && isset($this->filtr_od)) == false)
+        {
+            $this->filtr_od = Date('Y-n-j',mktime(0,0,0,date('m')-5,date('d'),date('y')));
+            $this->filtr_do = Date('Y-n-j');
+        }
         $this->id_zakaznik = $id_zakaznik;
         $this["novaObjednavka"]["id"]->setValue($id_zakaznik);
         if ($id_automat != NULL)
@@ -537,6 +539,21 @@ class ObjednavkyPresenter extends BasePresenter {
         $this->template->historie_zbozi = array();
         
         $historie = $this->model->getObjednavkyOdDo(array("datum" => "DESC", "id_objednavka" => "DESC"), array('id_zakaznik' => $id_zakaznik), NULL, NULL, $this->filtr_od, $this->filtr_do);
+        
+        // zacatek mesice
+        $d = new DateTime($this->filtr_od);
+        $d->modify( 'first day of next month' );
+        $mesic_od = $d->format("d-m-Y");
+
+        // konec mesice
+        $d = new DateTime($this->filtr_do);
+        $d->modify( 'last day of previous month' );
+        $mesic_do = $d->format("d-m-Y");
+
+        $diff = abs(strtotime($mesic_do) - strtotime($mesic_od));
+        $years = floor($diff / (365*60*60*24));
+        $pocet_mesicu = $months = floor(($diff - $years * 365*60*60*24) / (30*60*60*24));
+        $historie_mesic = $this->model->getObjednavkyOdDo(array("datum" => "DESC", "id_objednavka" => "DESC"), array('id_zakaznik' => $id_zakaznik), NULL, NULL, $mesic_od, $mesic_do);
 
         $predelane = array();
         $i=0;
@@ -546,11 +563,17 @@ class ObjednavkyPresenter extends BasePresenter {
         $celkova_cena_s_dph = 0;
         $celkem_body = 0;
 
+        $celkova_cena_mesic_bez_dph = 0;
+        $celkova_cena_mesic_s_dph = 0;
+        $zisk_mesic = 0;
         foreach ($kategorie as $kat)
         {
             $zbozi = $this->zboziModel->getZbozi(array("id_zbozi" => "DESC"), array('id_kategorie' => $kat->id_kategorie));
             foreach ($zbozi as $zboz)
+            {
                 $historie_shrnuti[$zboz->id_zbozi] = 0;
+                
+            }
         }
         
         foreach ($historie as $zaznam)
@@ -817,6 +840,12 @@ class ObjednavkyPresenter extends BasePresenter {
         if ($id == NULL)
             $this->redirect('Hlidac:default');
         
+        if ((isset($this->filtr_od) && isset($this->filtr_od)) == false)
+        {
+            $this->filtr_od = Date('Y-n-j',mktime(0,0,0,date('m')-5,date('d'),date('y')));
+            $this->filtr_do = Date('Y-n-j');
+        }
+
         $objednavka = new Objednavka();
         $objednavka->id_objednavka = $id;
         if ($objednavka->fetch() == false)

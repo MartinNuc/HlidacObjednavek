@@ -122,13 +122,14 @@ class ObjednavkyModel
         {
             try {
              $ret = dibi::query(
-                        'SELECT DISTINCT date_format(objednavky.datum, "%e. %c. %Y") as formatovane_datum, zakaznici.nazev as zakaznik_nazev, zakaznici.telefon, zakaznici.adresa, zakaznici.hidden as zakaznik_hidden, zakaznici.ico, oblasti.nazev as oblast_nazev, smlouvy.cislo_smlouvy, objednavky.* 
+                        'SELECT DISTINCT date_format(objednavky.datum, "%e. %c. %Y") as formatovane_datum, zakaznici.nazev as zakaznik_nazev, zakaznici.telefon, automaty.umisteni, automaty.adresa, zakaznici.hidden as zakaznik_hidden, zakaznici.ico, oblasti.nazev as oblast_nazev, smlouvy.cislo_smlouvy, objednavky.* 
                             FROM [objednavky] 
                             LEFT JOIN [zakaznici] USING (id_zakaznik) 
                             LEFT JOIN [smlouvy] USING (id_zakaznik) 
                             LEFT JOIN [oblasti] USING (id_oblast)
                             LEFT JOIN [zbozi_objednavky] USING (id_objednavka)
                             LEFT JOIN [zbozi] USING (id_zbozi)
+                            LEFT JOIN [automaty] ON (hledani_vyrobni_cislo=automaty.vyrobni_cislo)
                             WHERE 1=1
                          %if', isset($where), ' AND %and', isset($where) ? $where : array(), '%end',
                         '%if', isset($od), ' AND datum>="' . $od . '" %end',

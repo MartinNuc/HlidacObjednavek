@@ -122,7 +122,7 @@ class ObjednavkyModel
         {
             try {
              $ret = dibi::query(
-                        'SELECT DISTINCT date_format(objednavky.datum, "%e. %c. %Y") as formatovane_datum, zakaznici.nazev as zakaznik_nazev, zakaznici.telefon, zakaznici.adresa, zakaznici.hidden as zakaznik_hidden, zakaznici.ico, oblasti.nazev as oblast_nazev, smlouvy.*, objednavky.* 
+                        'SELECT DISTINCT date_format(objednavky.datum, "%e. %c. %Y") as formatovane_datum, zakaznici.nazev as zakaznik_nazev, zakaznici.telefon, zakaznici.adresa, zakaznici.hidden as zakaznik_hidden, zakaznici.ico, oblasti.nazev as oblast_nazev, smlouvy.cislo_smlouvy, objednavky.* 
                             FROM [objednavky] 
                             LEFT JOIN [zakaznici] USING (id_zakaznik) 
                             LEFT JOIN [smlouvy] USING (id_zakaznik) 
@@ -138,6 +138,7 @@ class ObjednavkyModel
                         '%if', isset($limit), 'LIMIT %i %end', $limit,
                         '%if', isset($offset), 'OFFSET %i %end', $offset
                     )->setRowClass('Objednavka');
+             Debugger::log("getObjednavkyTrasy: " . Dibi::$sql);
              return $ret;
             }
             catch (DibiException $e)

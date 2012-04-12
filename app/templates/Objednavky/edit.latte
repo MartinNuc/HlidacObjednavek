@@ -232,10 +232,20 @@
                     </td>
                 </tr>
                 <tr class="licha">
+                    <td>Průměr na měsíc:</td>
+                    <td>
+                        {!$historie_mesic_shrnuti_prumer}
+                    </td>
+                </tr>
+                <tr class="licha">
                     <td colspan="2">
                         Cena celkem bez DPH: {$celkova_cena_bez_dph |number:2:',':' '} Kč<br/>
                         Cena celkem s DPH: {$celkova_cena_s_dph |number:2:',':' '} Kč<br/>
                         Body celkem: {$celkem_body}
+                        {if $user->isInRole('admin')}
+                            <br/>
+                            Ziskovost: {$ziskovost |number:2:',':' '} Kč
+                        {/if}
                     </td>
                 </tr>           
             </tbody>

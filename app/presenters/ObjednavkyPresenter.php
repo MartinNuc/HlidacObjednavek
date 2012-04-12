@@ -540,20 +540,9 @@ class ObjednavkyPresenter extends BasePresenter {
         
         $historie = $this->model->getObjednavkyOdDo(array("datum" => "DESC", "id_objednavka" => "DESC"), array('id_zakaznik' => $id_zakaznik), NULL, NULL, $this->filtr_od, $this->filtr_do);
         
-        // zacatek mesice
-        /*$d = new DateTime($this->filtr_od);
-        $d->modify( 'first day of next month' );
-        $mesic_od = $d->format("d-m-Y");
-
-        // konec mesice
-        $d = new DateTime($this->filtr_do);
-        $d->modify( 'last day of previous month' );
-        $mesic_do = $d->format("d-m-Y");*/
-
         $diff = abs(strtotime($this->filtr_do) - strtotime($this->filtr_od));
         $years = floor($diff / (365*60*60*24));
         $pocet_mesicu = $months = floor(($diff - $years * 365*60*60*24) / (30*60*60*24));
-        //$historie_mesic = $this->model->getObjednavkyOdDo(array("datum" => "DESC", "id_objednavka" => "DESC"), array('id_zakaznik' => $id_zakaznik), NULL, NULL, $mesic_od, $mesic_do);
 
         $predelane = array();
         $i=0;
@@ -563,7 +552,6 @@ class ObjednavkyPresenter extends BasePresenter {
         $celkova_cena_s_dph = 0;
         $celkem_body = 0;
 
-        $zisk_mesic = 0;
         foreach ($kategorie as $kat)
         {
             $zbozi = $this->zboziModel->getZbozi(array("id_zbozi" => "DESC"), array('id_kategorie' => $kat->id_kategorie));
@@ -630,7 +618,6 @@ class ObjednavkyPresenter extends BasePresenter {
         $output2 = "";  // prumer
         $output3 = "";  // prumer
         $celkovy_zisk = 0;
-                $this->template->ziskovost = $this->zisk / $pocet_mesicu;
         foreach ($kategorie as $kat)
         {
             $zbozi = $this->zboziModel->getZbozi(array("id_zbozi" => "DESC"), array('id_kategorie' => $kat->id_kategorie));
@@ -1020,6 +1007,10 @@ class ObjednavkyPresenter extends BasePresenter {
         $kategorie = $this->kategorieModel->getKategorie();
         $this->template->historie_zbozi = array();
         
+        $diff = abs(strtotime($this->filtr_do) - strtotime($this->filtr_od));
+        $years = floor($diff / (365*60*60*24));
+        $pocet_mesicu = $months = floor(($diff - $years * 365*60*60*24) / (30*60*60*24));
+        
         $historie = $this->model->getObjednavkyOdDo(array("datum" => "DESC", "id_objednavka" => "DESC"), array('id_zakaznik' => $id_zakaznik), NULL, NULL, $this->filtr_od, $this->filtr_do);
 
         $predelane = array();
@@ -1029,7 +1020,7 @@ class ObjednavkyPresenter extends BasePresenter {
         $celkova_cena_bez_dph = 0;
         $celkova_cena_s_dph = 0;
         $celkem_body = 0;
-        
+
         foreach ($kategorie as $kat)
         {
             $zbozi = $this->zboziModel->getZbozi(array("id_zbozi" => "DESC"), array('id_kategorie' => $kat->id_kategorie));
@@ -1090,6 +1081,8 @@ class ObjednavkyPresenter extends BasePresenter {
         /*************** Historie statistika *******************/
         $output = "";   // soucet
         $output2 = "";  // prumer
+        $output3 = "";  // mesicni prumer
+        $celkovy_zisk = 0;
         foreach ($kategorie as $kat)
         {
             // ---!!!!!!!!!!!!!!!!!!!!!!!!!---- ZDE vyplnuju data i do objednavky
@@ -1098,8 +1091,10 @@ class ObjednavkyPresenter extends BasePresenter {
             $zbozi = $this->zboziModel->getZbozi(array("id_zbozi" => "DESC"), array('id_kategorie' => $kat->id_kategorie));
             $output = $output . '<div class="hist_kategorie">';
             $output2 = $output2 . '<div class="hist_kategorie">';
+            $output3 = $output3 . '<div class="hist_kategorie">';
             $output = $output . '<div class="hist_kategorie_nazev">' . $kat->nazev . '</div>';
             $output2 = $output2 . '<div class="hist_kategorie_nazev">' . $kat->nazev . '</div>';
+            $output3 = $output3 . '<div class="hist_kategorie_nazev">' . $kat->nazev . '</div>';
             foreach ($zbozi as $zboz)
             {
                 // kdyz uz iteruju, tak zapisu i data do formulare objednavky
@@ -1111,7 +1106,10 @@ class ObjednavkyPresenter extends BasePresenter {
 
                 if (count($historie) > 0)
                     if ($historie_shrnuti[$zboz->id_zbozi] != 0)
+                    {
                         $output = $output . '<div class="hist_value vyplneno">' . $historie_shrnuti[$zboz->id_zbozi] . "</div>";
+                        $celkovy_zisk += ($zboz->prodejni_cena - $zboz->nakupni_cena) * $historie_shrnuti[$zboz->id_zbozi];
+                    }
                     else
                         $output = $output . '<div class="hist_value">' . $historie_shrnuti[$zboz->id_zbozi] . "</div>";
                 else
@@ -1130,12 +1128,31 @@ class ObjednavkyPresenter extends BasePresenter {
                 else
                     $output2 = $output2 . '<div class="hist_value">' . '--' . "</div>";
                 $output2 = $output2 . '</div>';
+                
+                // mesicni prumer
+                $output3 = $output3 . '<div class="historie_prvek">';
+                $output3 = $output3 . '<div class="hist_nadpis">' . $zboz->zkratka . "</div>";
+
+                if (count($historie) > 0)
+                {
+                    if ($historie_shrnuti[$zboz->id_zbozi] != 0)
+                        $output3 = $output3 . '<div class="hist_value vyplneno">' . round($historie_shrnuti[$zboz->id_zbozi] / $pocet_mesicu,2) . "</div>";
+                    else
+                        $output3 = $output3 . '<div class="hist_value">' . round($historie_shrnuti[$zboz->id_zbozi] / $pocet_mesicu, 2) . "</div>";
+                }
+                else
+                    $output3 = $output3 . '<div class="hist_value">' . '--' . "</div>";
+                $output3 = $output3 . '</div>';
+                
             }
             $output = $output . "</div>";
             $output2 = $output2 . "</div>";
+            $output3 = $output3 . "</div>";
         }
+        $this->template->ziskovost = $celkovy_zisk / $pocet_mesicu;
         $this->template->historie_shrnuti_soucet = $output;
         $this->template->historie_shrnuti_prumer = $output2;
+        $this->template->historie_mesic_shrnuti_prumer = $output3;
         
         /*********** Prepocitavani objednavky *************/
         $this->template->cena_s_dph = $this->cena_s_dph;

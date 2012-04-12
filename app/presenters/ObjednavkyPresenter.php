@@ -629,6 +629,8 @@ class ObjednavkyPresenter extends BasePresenter {
         $output = "";   // soucet
         $output2 = "";  // prumer
         $output3 = "";  // prumer
+        $celkovy_zisk = 0;
+                $this->template->ziskovost = $this->zisk / $pocet_mesicu;
         foreach ($kategorie as $kat)
         {
             $zbozi = $this->zboziModel->getZbozi(array("id_zbozi" => "DESC"), array('id_kategorie' => $kat->id_kategorie));
@@ -647,7 +649,10 @@ class ObjednavkyPresenter extends BasePresenter {
                 if (count($historie) > 0)
                 {
                     if ($historie_shrnuti[$zboz->id_zbozi] != 0)
+                    {
                         $output = $output . '<div class="hist_value vyplneno">' . $historie_shrnuti[$zboz->id_zbozi] . "</div>";
+                        $celkovy_zisk += ($zboz->prodejni_cena - $zboz->nakupni_cena) * $historie_shrnuti[$zboz->id_zbozi];
+                    }
                     else
                         $output = $output . '<div class="hist_value">' . $historie_shrnuti[$zboz->id_zbozi] . "</div>";
                 }
@@ -689,6 +694,7 @@ class ObjednavkyPresenter extends BasePresenter {
             $output2 = $output2 . "</div>";
             $output3 = $output3 . "</div>";
         }
+        $this->template->ziskovost = $celkovy_zisk / $pocet_mesicu;
         $this->template->historie_shrnuti_soucet = $output;
         $this->template->historie_shrnuti_prumer = $output2;
         $this->template->historie_mesic_shrnuti_prumer = $output3;

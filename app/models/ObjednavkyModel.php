@@ -122,7 +122,8 @@ class ObjednavkyModel
         {
             try {
              $ret = dibi::query(
-                        'SELECT DISTINCT date_format(objednavky.datum, "%e. %c. %Y") as formatovane_datum, zakaznici.nazev as zakaznik_nazev, zakaznici.telefon, automaty.umisteni, automaty.adresa, zakaznici.hidden as zakaznik_hidden, zakaznici.ico, oblasti.nazev as oblast_nazev, smlouvy.cislo_smlouvy, objednavky.* 
+                     'SELECT t.*, GROUP_CONCAT(CONCAT(jmeno, " (",telefon, ")") SEPARATOR ";") as kontakt FROM (',
+                        'SELECT DISTINCT date_format(objednavky.datum, "%e. %c. %Y") as formatovane_datum, zakaznici.nazev as zakaznik_nazev, automaty.umisteni, automaty.adresa, zakaznici.hidden as zakaznik_hidden, zakaznici.ico, oblasti.nazev as oblast_nazev, smlouvy.cislo_smlouvy, kontakty.jmeno as jmeno, kontakty.telefon as telefon, objednavky.*
                             FROM [objednavky] 
                             LEFT JOIN [zakaznici] USING (id_zakaznik) 
                             LEFT JOIN [smlouvy] USING (id_zakaznik) 
@@ -130,16 +131,18 @@ class ObjednavkyModel
                             LEFT JOIN [zbozi_objednavky] USING (id_objednavka)
                             LEFT JOIN [zbozi] USING (id_zbozi)
                             LEFT JOIN [automaty] ON (hledani_vyrobni_cislo=automaty.vyrobni_cislo)
+                            LEFT JOIN [automat_kontakt] USING (id_automat)
+                            LEFT JOIN [kontakty] USING (id_kontakt)
                             WHERE 1=1
                          %if', isset($where), ' AND %and', isset($where) ? $where : array(), '%end',
                         '%if', isset($od), ' AND datum>="' . $od . '" %end',
                         '%if', isset($do), ' AND datum<="' . $do . '" %end',
-                        '%if', isset($filtr_oblasti), isset($filtr_oblasti) ? "AND (objednavky.".$filtr_oblasti.")" : "", '%end ',
+                        '%if', isset($filtr_oblasti), isset($filtr_oblasti) ? "AND (objednavky.".$filtr_oblasti.")" : "", '%end ',          
                         '%if', isset($order), 'ORDER BY %by', $order, '%end',
                         '%if', isset($limit), 'LIMIT %i %end', $limit,
-                        '%if', isset($offset), 'OFFSET %i %end', $offset
+                        '%if', isset($offset), 'OFFSET %i %end', $offset,
+                      ') AS t GROUP BY id_objednavka'   
                     )->setRowClass('Objednavka');
-             Debugger::log("getObjednavkyTrasy: " . Dibi::$sql);
              return $ret;
             }
             catch (DibiException $e)

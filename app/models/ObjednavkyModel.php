@@ -123,10 +123,9 @@ class ObjednavkyModel
             try {
              $ret = dibi::query(
                      'SELECT t.*, GROUP_CONCAT(CONCAT(jmeno, " (",telefon, ")") SEPARATOR ";") as kontakt FROM (',
-                        'SELECT DISTINCT date_format(objednavky.datum, "%e. %c. %Y") as formatovane_datum, zakaznici.nazev as zakaznik_nazev, automaty.umisteni, automaty.adresa, zakaznici.hidden as zakaznik_hidden, zakaznici.ico, oblasti.nazev as oblast_nazev, smlouvy.cislo_smlouvy, kontakty.jmeno as jmeno, kontakty.telefon as telefon, objednavky.*
+                        'SELECT DISTINCT date_format(objednavky.datum, "%e. %c. %Y") as formatovane_datum, zakaznici.nazev as zakaznik_nazev, automaty.umisteni, automaty.adresa, zakaznici.hidden as zakaznik_hidden, zakaznici.ico, oblasti.nazev as oblast_nazev, kontakty.jmeno as jmeno, kontakty.telefon as telefon, objednavky.*
                             FROM [objednavky] 
                             LEFT JOIN [zakaznici] USING (id_zakaznik) 
-                            LEFT JOIN [smlouvy] USING (id_zakaznik) 
                             LEFT JOIN [oblasti] USING (id_oblast)
                             LEFT JOIN [zbozi_objednavky] USING (id_objednavka)
                             LEFT JOIN [zbozi] USING (id_zbozi)
@@ -143,6 +142,7 @@ class ObjednavkyModel
                         '%if', isset($offset), 'OFFSET %i %end', $offset,
                       ') AS t GROUP BY id_objednavka'   
                     )->setRowClass('Objednavka');
+             Debugger::log("getObjednavkyTrasy: " . Dibi::$sql);
              return $ret;
             }
             catch (DibiException $e)

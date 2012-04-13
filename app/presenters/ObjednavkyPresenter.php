@@ -683,7 +683,7 @@ class ObjednavkyPresenter extends BasePresenter {
             $output2 = $output2 . "</div>";
             $output3 = $output3 . "</div>";
         }
-        $this->template->ziskovost = $celkovy_zisk / $pocet_mesicu;
+        $this->template->ziskovost = $celkovy_zisk;
         $this->template->historie_shrnuti_soucet = $output;
         $this->template->historie_shrnuti_prumer = $output2;
         $this->template->historie_mesic_shrnuti_prumer = $output3;
@@ -1153,7 +1153,7 @@ class ObjednavkyPresenter extends BasePresenter {
             $output2 = $output2 . "</div>";
             $output3 = $output3 . "</div>";
         }
-        $this->template->ziskovost = $celkovy_zisk / $pocet_mesicu;
+        $this->template->ziskovost = $celkovy_zisk;
         $this->template->historie_shrnuti_soucet = $output;
         $this->template->historie_shrnuti_prumer = $output2;
         $this->template->historie_mesic_shrnuti_prumer = $output3;

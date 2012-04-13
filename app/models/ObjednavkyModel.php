@@ -142,7 +142,6 @@ class ObjednavkyModel
                         '%if', isset($offset), 'OFFSET %i %end', $offset,
                       ') AS t GROUP BY id_objednavka'   
                     )->setRowClass('Objednavka');
-             Debugger::log("getObjednavkyTrasy: " . Dibi::$sql);
              return $ret;
             }
             catch (DibiException $e)

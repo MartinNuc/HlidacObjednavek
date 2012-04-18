@@ -253,6 +253,14 @@
                         {!$historie_mesic_shrnuti_prumer}
                     </td>
                 </tr>
+                {if $user->isInRole('admin')}
+                <tr>
+                    <td>Ziskovost zboží:</td>
+                    <td>
+                        {!$ziskovost_zbozi}
+                    </td>
+                </tr>  
+                {/if}
                 <tr class="licha">
                     <td colspan="2">
                         Cena celkem bez DPH: {$celkova_cena_bez_dph |number:2:',':' '} Kč<br/>

@@ -37,7 +37,7 @@ class FixSmlouvyPresenter extends BasePresenter {
         $obj = new Objednavka();
         $obj->id_objednavka = $idObjednavky;
         $obj->id_smlouva = $idSmlouvy;
-        $obj->save();
+        $obj->saveWithoutDelete();
         
         if (!$this->isAjax())
             $this->redirect('this');

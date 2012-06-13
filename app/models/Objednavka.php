@@ -45,6 +45,24 @@ class Objednavka extends DibiRow
     }
     
     /**
+     * Saves changes to editted entity
+     * @return bool result of UPDATE query 
+     */
+    public function saveWithoutDelete()
+    {
+        try {
+      
+        dibi::query('UPDATE [objednavky] SET', (array) $this, 'WHERE [id_objednavka]=%i', $this->id_objednavka); 
+        return true;
+        }
+        catch (DibiDriverException $e)
+        {
+            Debugger::log("Objednavka->save: " . dibi::$sql);
+        }
+        return false;
+    }
+    
+    /**
      * Returns items from order to the warehouse
      */
     public function vratitZboziDoSkladu()

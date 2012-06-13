@@ -619,6 +619,7 @@ class ObjednavkyPresenter extends BasePresenter {
         $output = "";   // soucet
         $output2 = "";  // prumer
         $output3 = "";  // prumer
+        $output4 = "";  // prumer
         $celkovy_zisk = 0;
         foreach ($kategorie as $kat)
         {
@@ -626,9 +627,11 @@ class ObjednavkyPresenter extends BasePresenter {
             $output = $output . '<div class="hist_kategorie">';
             $output2 = $output2 . '<div class="hist_kategorie">';
             $output3 = $output3 . '<div class="hist_kategorie">';
+            $output4 = $output4 . '<div class="hist_kategorie">';
             $output = $output . '<div class="hist_kategorie_nazev">' . $kat->nazev . '</div>';
             $output2 = $output2 . '<div class="hist_kategorie_nazev">' . $kat->nazev . '</div>';
             $output3 = $output3 . '<div class="hist_kategorie_nazev">' . $kat->nazev . '</div>';;
+            $output4 = $output4 . '<div class="hist_kategorie_nazev">' . $kat->nazev . '</div>';;
             foreach ($zbozi as $zboz)
             {
                 // soucet
@@ -678,15 +681,32 @@ class ObjednavkyPresenter extends BasePresenter {
                 else
                     $output3 = $output3 . '<div class="hist_value">' . '--' . "</div>";
                 $output3 = $output3 . '</div>';
+                
+                // ziskovost
+                $output4 = $output4 . '<div class="historie_prvek">';
+                $output4 = $output4 . '<div class="hist_nadpis">' . $zboz->zkratka . "</div>";
+
+                if (count($historie) > 0)
+                {
+                    if ($historie_shrnuti[$zboz->id_zbozi] != 0)
+                        $output4 = $output4 . '<div class="hist_value vyplneno">' . ($zboz->prodejni_cena - $zboz->nakupni_cena) * $historie_shrnuti[$zboz->id_zbozi] . "</div>";
+                    else
+                        $output4 = $output4 . '<div class="hist_value">' . 0 . "</div>";
+                }
+                else
+                    $output4 = $output4 . '<div class="hist_value">' . '--' . "</div>";
+                $output4 = $output4 . '</div>';
             }
             $output = $output . "</div>";
             $output2 = $output2 . "</div>";
             $output3 = $output3 . "</div>";
+            $output4 = $output4 . "</div>";
         }
         $this->template->ziskovost = $celkovy_zisk;
         $this->template->historie_shrnuti_soucet = $output;
         $this->template->historie_shrnuti_prumer = $output2;
         $this->template->historie_mesic_shrnuti_prumer = $output3;
+        $this->template->ziskovost_zbozi = $output4;
         
         /*********** Prepocitavani objednavky *************/
         $form = $this["novaObjednavka"];
@@ -1086,6 +1106,7 @@ class ObjednavkyPresenter extends BasePresenter {
         $output = "";   // soucet
         $output2 = "";  // prumer
         $output3 = "";  // mesicni prumer
+        $output4 = "";  // ziskovost
         $celkovy_zisk = 0;
         foreach ($kategorie as $kat)
         {
@@ -1096,9 +1117,11 @@ class ObjednavkyPresenter extends BasePresenter {
             $output = $output . '<div class="hist_kategorie">';
             $output2 = $output2 . '<div class="hist_kategorie">';
             $output3 = $output3 . '<div class="hist_kategorie">';
+            $output4 = $output4 . '<div class="hist_kategorie">';
             $output = $output . '<div class="hist_kategorie_nazev">' . $kat->nazev . '</div>';
             $output2 = $output2 . '<div class="hist_kategorie_nazev">' . $kat->nazev . '</div>';
             $output3 = $output3 . '<div class="hist_kategorie_nazev">' . $kat->nazev . '</div>';
+            $output4 = $output4 . '<div class="hist_kategorie_nazev">' . $kat->nazev . '</div>';
             foreach ($zbozi as $zboz)
             {
                 // kdyz uz iteruju, tak zapisu i data do formulare objednavky
@@ -1148,12 +1171,28 @@ class ObjednavkyPresenter extends BasePresenter {
                     $output3 = $output3 . '<div class="hist_value">' . '--' . "</div>";
                 $output3 = $output3 . '</div>';
                 
+                // ziskovost
+                $output4 = $output4 . '<div class="historie_prvek">';
+                $output4 = $output4 . '<div class="hist_nadpis">' . $zboz->zkratka . "</div>";
+
+                if (count($historie) > 0)
+                {
+                    if ($historie_shrnuti[$zboz->id_zbozi] != 0)
+                        $output4 = $output4 . '<div class="hist_value vyplneno">' . ($zboz->prodejni_cena - $zboz->nakupni_cena) * $historie_shrnuti[$zboz->id_zbozi] . "</div>";
+                    else
+                        $output4 = $output4 . '<div class="hist_value">' . 0 . "</div>";
+                }
+                else
+                    $output4 = $output4 . '<div class="hist_value">' . '--' . "</div>";
+                $output4 = $output4 . '</div>';
             }
             $output = $output . "</div>";
             $output2 = $output2 . "</div>";
             $output3 = $output3 . "</div>";
+            $output4 = $output4 . "</div>";
         }
         $this->template->ziskovost = $celkovy_zisk;
+        $this->template->ziskovost_zbozi = $output4;
         $this->template->historie_shrnuti_soucet = $output;
         $this->template->historie_shrnuti_prumer = $output2;
         $this->template->historie_mesic_shrnuti_prumer = $output3;

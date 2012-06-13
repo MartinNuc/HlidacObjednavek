@@ -34,6 +34,44 @@ class ObjednavkyModel
              return NULL;
         }
         
+/**
+         * Search method for Objednavky
+         * @param array $order Order of the output
+         * @param array $where WHERE condition
+         * @param int $offset used for paging
+         * @param int $limit used for paging
+         * @return DibiResult result 
+         */
+        public function getObjednavkyFixSmlouvy($order = NULL, $where = NULL, $offset = NULL, $limit = NULL, $filtr_zakaznik = NULL)
+        {
+            $res = NULL;
+            $and = array();
+            $and[] = array( '%b', true );
+            foreach( $where AS $colName => $colVal )
+            {
+                 $and[] = array( "$colName LIKE '%$colVal%'");
+            }
+            try {
+            $res = dibi::query(
+                        'SELECT date_format(objednavky.datum, "%e. %c. %Y") as formatovane_datum, zakaznici.nazev as zakaznik_nazev, zakaznici.hidden as zakaznik_hidden, smlouvy.poc as novypoc, smlouvy.cislo_smlouvy as novecislosmlouvy, smlouvy.id_smlouva as id_nove_smlouvy, objednavky.*
+                            FROM [objednavky] 
+                            LEFT JOIN [zakaznici] USING (id_zakaznik)
+                            LEFT JOIN [smlouvy] USING (id_zakaznik)
+                            WHERE objednavky.id_smlouva=0 AND zakaznici.osobni_zakaznik=0 AND smlouvy.od <= objednavky.datum AND smlouvy.do >= objednavky.datum AND
+                         %if', isset($where), ' %and', isset($and) ? $and : array(), '%end',
+                        '%if', isset($filtr_zakaznik) && $filtr_zakaznik!="", ' AND zakaznici.nazev LIKE %s', isset($filtr_zakaznik) ? "%" .$filtr_zakaznik."%" : '', '%end',
+                        '%if', isset($order), 'ORDER BY %by', $order, '%end',
+                        '%if', isset($limit), 'LIMIT %i %end', $limit,
+                        '%if', isset($offset), 'OFFSET %i %end', $offset
+                    )->setRowClass('Objednavka');
+            }
+            catch (DibiException $e)
+            {
+                Debugger::log("getObjednavkyOdDo: " . dibi::$sql);
+            }
+            return $res;
+        }
+        
         /**
          * Search method for Objednavky
          * @param array $order Order of the output
@@ -44,13 +82,15 @@ class ObjednavkyModel
          */
         public function getObjednavkyHledani($order = NULL, $where = NULL, $offset = NULL, $limit = NULL, $filtr_zakaznik = NULL)
         {
+            $ret = NULL;
             $and = array();
             $and[] = array( '%b', true );
             foreach( $where AS $colName => $colVal )
             {
                  $and[] = array( "$colName LIKE '%$colVal%'");
             }
-             return dibi::query(
+            try {
+            $ret = dibi::query(
                         'SELECT date_format(objednavky.datum, "%e. %c. %Y") as formatovane_datum, zakaznici.nazev as zakaznik_nazev, zakaznici.hidden as zakaznik_hidden, oblasti.nazev as oblast_nazev, objednavky.* FROM [objednavky] LEFT JOIN [zakaznici] USING (id_zakaznik) LEFT JOIN [oblasti] USING (id_oblast) WHERE 
                          %if', isset($where), ' %and', isset($and) ? $and : array(), '%end',
                         '%if', isset($filtr_zakaznik) && $filtr_zakaznik!="", ' AND zakaznici.nazev LIKE %s', isset($filtr_zakaznik) ? "%" .$filtr_zakaznik."%" : '', '%end',
@@ -58,6 +98,12 @@ class ObjednavkyModel
                         '%if', isset($limit), 'LIMIT %i %end', $limit,
                         '%if', isset($offset), 'OFFSET %i %end', $offset
                     )->setRowClass('Objednavka');
+            }
+            catch (DibiException $e)
+            {
+                Debugger::log("getObjednavkyOdDo: " . dibi::$sql);
+            }
+            return $ret;
         }
 
         /**

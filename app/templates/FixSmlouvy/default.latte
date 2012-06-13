@@ -1,0 +1,72 @@
+{block navigace}
+<a href="{plink Hlidac:default}">Hlídač objednávek</a> / {include #title}
+{/block}
+
+{block content}
+<h1>{block #title}Seznam objednávek bez přiřazených smluv{/block}</h1>
+<p>
+    Zde je seznam objednávek zákazníků Nestlé, které nemají přiřazenou smlouvu. Patrně z důvodu, že u zákazníka neexistovala při zadávání objednávky.
+</p>
+<p>
+    V úplně pravém sloupečku je návrh smlouvy, která by podle data měla k objednávce patřit. Kliknutím na ni se k objednávce přiřadí.
+</p>
+{snippet formFiltrObjednavek}
+    {control filtrObjednavek}
+{/snippet}
+{snippet stranky}
+{control vp}
+<table class="table fixobjednavky">
+    <thead>
+        <tr>
+            <th>Datum</th>
+            <th>Kód</th>
+            <th>Zákazník</th>
+            <th>Cena s DPH</th>
+            <th>Cena bez DPH</th>
+            <th>Body</th>
+            <th>Přiřadit smlouvu</th>
+        </tr>
+    </thead>
+    <tbody>
+        {if count($items) == 0}
+            <tr class="licha"><td colspan="9">Žádná data</td></tr>
+        {/if}
+
+	{assign $i => 0}
+	{foreach $items as $item}	
+		{if $i % 2 }
+                     <tr class="slight_border licha">
+                {else}
+                     <tr class="slight_border suda">
+                {/if}
+
+		<td>
+		{$item->formatovane_datum}
+                </td><td>
+                {if $item->zakaznik_hidden==0}
+                    <a href="{plink Objednavky:Edit, $item->id_objednavka}">{$item->kod}</a>
+                {else}
+                    {$item->kod}
+                {/if}
+                </td><td>
+                {if $item->zakaznik_hidden==0}
+                    <a href="{plink Zakaznici:Edit, $item->id_zakaznik}">{$item->zakaznik_nazev}</a>
+                {else}
+                    {$item->zakaznik_nazev}
+                {/if}
+                </td><td>
+                {$item->cena_s_dph |number:2:',':' '}
+                </td><td>
+                {$item->cena_bez_dph |number:2:',':' '}
+                </td><td>
+                {$item->body}
+                </td>
+                <td>
+                    <b>Navrhovaná smlouva:</b> <a class="ajax" href="{plink Prirad!, $item->id_objednavka, $item->id_nove_smlouvy}">{$item->novecislosmlouvy}</a>
+                </td>
+                {assign $i => $i+1}
+		</tr>
+	{/foreach}
+    </tbody>
+</table>
+{/snippet}

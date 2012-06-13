@@ -1284,7 +1284,7 @@ class ObjednavkyPresenter extends BasePresenter {
                 'datum' => 'DESC', "kod" => "DESC"), array("objednavky.hledani_bmb" => $this->filtr_bmb,
                     "objednavky.hledani_vyrobni_cislo" => $this->filtr_vyrobni_cislo,
                     "objednavky.kod" => $this->filtr_objednavky),
-                $paginator->offset, $paginator->itemsPerPage, $this->filtr_zakaznik));
+                NULL, NULL, $this->filtr_zakaznik));
         $items = $this -> model -> getObjednavkyHledani($order = array(
                 'datum' => 'DESC', "kod" => "DESC"), array("objednavky.hledani_bmb" => $this->filtr_bmb,
                     "objednavky.hledani_vyrobni_cislo" => $this->filtr_vyrobni_cislo,

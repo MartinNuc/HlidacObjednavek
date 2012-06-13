@@ -113,8 +113,8 @@ class ExportPresenter extends BasePresenter {
 
                   $objPHPExcel->getActiveSheet()->SetCellValue('E' . $i, $zakaznik->poc);
                   $objPHPExcel->getActiveSheet()->SetCellValue('F' . $i, $zakaznik->nazev);
-                if (isset($zboz->sapcode) && $zboz->sapcode != "")
-                  $objPHPExcel->getActiveSheet()->SetCellValue('H' . $i, $zboz->sapcode);
+                  if (isset($zboz->sapcode) && $zboz->sapcode != "")
+                    $objPHPExcel->getActiveSheet()->SetCellValue('H' . $i, $zboz->sapcode);
                   $objPHPExcel->getActiveSheet()->SetCellValue('I' . $i, $posledni);
                   $objPHPExcel->getActiveSheet()->SetCellValue('J' . $i, $soucet);
                   $objPHPExcel->getActiveSheet()->SetCellValue('K' . $i, $zboz->nazev);

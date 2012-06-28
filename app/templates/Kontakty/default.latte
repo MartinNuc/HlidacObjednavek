@@ -4,7 +4,14 @@
 
 {block content}
 <h1>{block #title}Správa kontaktů{/block}</h1>
-<p><a href="{$hromadnymail}">Odeslat hromadný email</a></p>
+<script type="text/javascript">
+   var sMailto = {$hromadnymail};
+ 
+   function doMailto() {
+      document.location.href = sMailto;
+   }
+</script>
+<p><a href="javascript:doMailto()">Odeslat hromadný email</a></p>
 {snippet formKontakty}
     {control filtrKontakty}
 {/snippet}

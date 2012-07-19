@@ -714,7 +714,6 @@ class ObjednavkyPresenter extends BasePresenter {
         $this->template->cena_bez_dph = $this->cena_bez_dph;
         $this->template->zisk = $this->zisk;
         $this->template->body = $this->body;
-
     }
     
     /************* EDITACE *******************/

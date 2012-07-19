@@ -90,7 +90,7 @@ class Objednavka extends DibiRow
         if (dibi::query("INSERT INTO [zbozi_objednavky] ", $values))
         {
             $ret = dibi::insertId();
-            dibi::query('UPDATE zbozi SET skladem = skladem - %i', $pocet, ' WHERE [id_zbozi]=%i', $id_zbozi);
+            dibi::query('UPDATE zbozi SET skladem = skladem - %f', $pocet, ' WHERE [id_zbozi]=%i', $id_zbozi);
             return $ret;
         }
         else

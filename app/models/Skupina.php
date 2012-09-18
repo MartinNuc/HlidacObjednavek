@@ -37,7 +37,7 @@ class Skupina extends DibiRow
         $res = new Skupina();
 
         if (isset($this->id_skupina))
-            $res = dibi::query('SELECT * FROM [skupiny] WHERE hidden=0 and [id_oblast]=%i', $this->id_oblast)->setRowClass('Skupina')->fetch();
+            $res = dibi::query('SELECT * FROM [skupiny] WHERE hidden=0 and [id_skupina]=%i', $this->id_skupina)->setRowClass('Skupina')->fetch();
         else return false;
         
         if ($res == false)

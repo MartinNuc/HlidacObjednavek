@@ -1,2 +1,44 @@
+{block navigace}
+<a href="{plink Hlidac:default}">Hlídač objednávek</a> / {include #title}
+{/block}
 
 {block content}
+<h1>{block #title}Správa skupin{/block}</h1>
+{snippet skupiny}
+<table class="table skupiny">
+    <thead>
+        <tr>
+            <th>Název</th>
+            <th>&nbsp;</th>
+        </tr>
+    </thead>
+    <tbody>
+        {if count($items) == 0}
+            <tr class="licha"><td colspan="3">Žádná data</td></tr>
+        {/if}
+	{assign $i => 0}
+	{foreach $items as $item}	
+            {if $i % 2 }
+                 <tr class="slight_border licha">
+            {else}
+                 <tr class="slight_border suda">
+            {/if}
+
+            <td>
+                <a href="{plink Edit, $item->id_skupina}">{$item->nazev}</a>
+            </td><td>
+            <a class="ajax delete" href="{plink Delete!, $item->id_skupina}"><img alt="Smazat" src="{$basePath}/images/delete.png"></a>
+            <a href="{plink Edit, $item->id_skupina}"><img alt="Upravit" src="{$basePath}/images/edit.png"></a>
+            {assign $i => $i+1}
+            </td>
+            </tr>
+	{/foreach}
+    </tbody>
+</table>
+{/snippet}
+<div id="nova_skupina">
+<h2>Přidání nové skupiny</h2>
+{snippet form}
+    {control pridatSkupinu}
+{/snippet}
+</div>

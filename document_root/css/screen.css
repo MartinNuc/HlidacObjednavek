@@ -93,6 +93,7 @@ table.zakaznik_automaty {width: 95%; max-width: 1000px;}
 table.kontakty {width: 95%; max-width: 1000px;}
 
 table.oblasti {width: 95%; max-width: 500px}
+table.skupiny {width: 95%; max-width: 500px}
 
 table.obchodni_zastupci {width: 95%; max-width: 800px}
 
@@ -128,6 +129,7 @@ table.hledani_zakazniku {width: 85%; max-width: 750px}
 .zakaznik_automaty td + td + td + td + td + td a {float: right}
 .kontakty  td + td + td + td + td a {float: right}
 .oblasti td + td + td a {float: right}
+.skupiny td + td a {float: right}
 .obchodni_zastupci td + td + td + td a {float: right}
 .dph td + td a {float: right}
 .kategorie td + td a {float: right}

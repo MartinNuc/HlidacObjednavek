@@ -86,8 +86,8 @@ class ExportPresenter extends BasePresenter {
                     $posledni = "";
 
                 $soucet = $this->model->getObjednavkyExport(NULL,
-                                        array("id_zakaznik" => $zakaznik->id_zakaznik, "id_zbozi" => $zboz->id_zbozi, "objednavky.id_smlouva" => $zakaznik->id_smlouva),
-                                        NULL, NULL, $od, $do)->fetchSingle();
+                                        array("id_zakaznik" => $zakaznik->id_zakaznik, "id_zbozi" => $zboz->id_zbozi),
+                                        NULL, NULL, $od, $do, $zakaznik->id_smlouva)->fetchSingle();
                 if ($soucet == false)
                     $soucet=0;
                 $objPHPExcel->getActiveSheet()->SetCellValue('C' . $i, date('Ymd'));

@@ -137,7 +137,7 @@ class ObjednavkyModel
             return NULL;
         }
         
-        public function getObjednavkyExport($order = NULL, $where = NULL, $offset = NULL, $limit = NULL, $od = NULL, $do = NULL)
+        public function getObjednavkyExport($order = NULL, $where = NULL, $offset = NULL, $limit = NULL, $od = NULL, $do = NULL, $id_smlouvy = 0)
         {
             try {
              $ret = dibi::query(
@@ -147,8 +147,8 @@ class ObjednavkyModel
                             LEFT JOIN [oblasti] USING (id_oblast)
                             LEFT JOIN [zbozi_objednavky] USING (id_objednavka)
                             LEFT JOIN [zbozi] USING (id_zbozi)
-                            WHERE 1=1
-                         %if', isset($where), ' AND %and', isset($where) ? $where : array(), '%end',
+                            WHERE (id_smlouva=', $id_smlouvy, " OR id_smlouva=0) ",
+                         '%if', isset($where), ' AND %and', isset($where) ? $where : array(), '%end',
                         '%if', isset($od), ' AND datum>="' . $od . '" %end',
                         '%if', isset($do), ' AND datum<="' . $do . '" %end',
                         '%if', isset($order), 'ORDER BY %by', $order, '%end',

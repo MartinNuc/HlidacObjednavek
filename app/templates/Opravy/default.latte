@@ -1,0 +1,11 @@
+{block navigace}
+<a href="{plink Hlidac:default}">Hlídač objednávek</a> / {include #title}
+{/block}
+
+{block content}
+<h1>{block #title}Oprava{/block}</h1>
+{snippet usersForm}
+    {control myForm begin}
+    {control myForm body}
+    {control myForm end}
+{/snippet}

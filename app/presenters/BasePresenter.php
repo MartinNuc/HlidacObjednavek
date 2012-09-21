@@ -10,6 +10,8 @@ abstract class BasePresenter extends Nette\Application\UI\Presenter
     /**
      * Flash messages
      */
+    
+    
     public function afterRender()
     {
         if ($this->isAjax() && $this->hasFlashSession())

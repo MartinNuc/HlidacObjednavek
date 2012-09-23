@@ -31,7 +31,14 @@ form tr:hover, form td a:hover{ border: none; background: white;}
     color: #00BB00;
 }
 
-.button {
+#frm-zadatOpravuForm { clear: left;}
+
+table.opravy
+{
+    width: 420px;
+}
+
+.button, button {
 		display: inline-block;
 		zoom: 1; /* zoom and *display = ie7 hack for display:inline-block */
 		display: inline;

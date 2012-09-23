@@ -3,9 +3,9 @@
 {/block}
 
 {block content}
-<h1>{block #title}Oprava{/block}</h1>
+<h1>{block #title}Nová oprava{/block}</h1>
 {snippet oprava}
-<a class="ajax" href="{plink Clean!}"><img alt="Vyčistit" src="{$basePath}/images/delete.png"></a>
+<a class="ajax" href="{plink Clean!}"><button>Promazat</button></a>
 <div class="opravy">
     {foreach $skupiny as $item}
         <h2>{$item->nazev}</h2>
@@ -13,6 +13,7 @@
         <table class="table opravy">
             <thead>
                 <tr>
+                    <th>Počet</th>
                     <th>Popis</th>
                     <th>Cena</th>
                     <th>&nbsp;</th>
@@ -29,6 +30,8 @@
                         {/if}
 
                         <td>
+                        {$polozka->pocet}
+                        </td><td>
                         {$polozka->popis}
                         </td><td>
                         {$polozka->cena}

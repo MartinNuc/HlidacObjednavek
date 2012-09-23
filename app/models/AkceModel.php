@@ -1,5 +1,5 @@
 <?php
-
+use Nette\Diagnostics\Debugger;
 /**
  * Description of DphModel
  *
@@ -16,15 +16,18 @@ class AkceModel {
      */
         public function getAkce($order = NULL, $where = NULL, $offset = NULL, $limit = NULL)
         {
-             return dibi::query(
-                        'SELECT * FROM [akce] ',
+             $res = dibi::query(
+                        'SELECT *, date_format(opravy.datum, "%e. %c. %Y") as formatovane_datum FROM [akce] left join [opravy] using (id_oprava)
+                            left join [skupiny] using (id_skupina) ',
                         '%if', isset($where), 'WHERE %and', isset($where) ? $where : array(), '%end',
                         '%if', isset($order), 'ORDER BY %by', $order, '%end',
                         '%if', isset($limit), 'LIMIT %i %end', $limit,
                         '%if', isset($offset), 'OFFSET %i %end', $offset
-                    )->setRowClass('Dph');
+                    )->setRowClass('Akce');
+             Debugger::log(dibi::$sql);
+             return $res;
         }
-        
+                
         /**
          * Adds new DPH value
          * @param Dph new DPH

@@ -1,2 +1,51 @@
+{block navigace}
+<a href="{plink Hlidac:default}">Hlídač objednávek</a> / {include #title}
+{/block}
 
 {block content}
+<h1>{block #title}Seznam oprav{/block}</h1>
+{snippet stranky}
+{control vp}
+<table class="table opravy">
+    <thead>
+        <tr>
+            <th>Datum</th>
+            <th>Popis</th>
+            <th>Počet</th>
+            <th>Cena</th>
+            <th>Skupina</th>
+            <th>&nbsp;</th>
+        </tr>
+    </thead>
+    <tbody>
+        {if count($items) == 0}
+            <tr class="licha"><td colspan="8">Žádná data</td></tr>
+        {/if}
+
+	{assign $i => 0}
+	{foreach $items as $item}	
+		{if $i % 2 }
+                     <tr class="slight_border licha">
+                {else}
+                     <tr class="slight_border suda">
+                {/if}
+
+		<td>
+		{$item->formatovane_datum}
+                </td><td>
+                {$item->popis}
+                </td><td>
+                {$item->pocet}
+                </td><td>
+                {$item->cena |number:2:',':' '}
+                </td><td>
+                {$item->nazev}
+                </td><td>
+		<a class="ajax delete" href="{plink Delete!, $item->id_akce}"><img alt="Delete" src="{$basePath}/images/delete.png"></a>
+		{assign $i => $i+1}
+		</td>
+		</tr>
+	{/foreach}
+    </tbody>
+</table>
+{/snippet}

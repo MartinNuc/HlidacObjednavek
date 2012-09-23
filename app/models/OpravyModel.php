@@ -22,7 +22,7 @@ class OpravyModel {
                         '%if', isset($order), 'ORDER BY %by', $order, '%end',
                         '%if', isset($limit), 'LIMIT %i %end', $limit,
                         '%if', isset($offset), 'OFFSET %i %end', $offset
-                    )->setRowClass('Dph');
+                    )->setRowClass('Oprava');
         }
         
         /**

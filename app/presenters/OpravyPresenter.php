@@ -46,6 +46,7 @@ class OpravyPresenter extends BasePresenter {
             $renderer->wrappers['control']['container'] = NULL;
             $renderer->wrappers['pair']['container'] = \Nette\Utils\Html::el('div')->class('oprava_polozka');
 
+            $form->addText('pocet', '')->setAttribute('autoComplete', "off")->addRule(Form::FILLED, 'Zadejte počet.');
             $form->addText('popis', '')->setAttribute('autoComplete', "off")->addRule(Form::FILLED, 'Zadejte popis.');
             $form->addText('cena', '')->setAttribute('autoComplete', "off")->addRule(Form::FILLED, 'Zadejte cenu.');
             $form->addHidden('itemId', $itemId);
@@ -60,6 +61,7 @@ class OpravyPresenter extends BasePresenter {
         // pridat do session polozku
         
         $pol = new PolozkaOpravy();
+        $pol->pocet = $form['pocet']->getValue();
         $pol->popis = $form['popis']->getValue();
         $pol->cena = $form['cena']->getValue();
         $pol->id_skupina = $form['itemId']->getValue();
@@ -112,6 +114,7 @@ class OpravyPresenter extends BasePresenter {
                 $p = new Akce();
                 $p->cena = $polozka["cena"];
                 $p->popis = $polozka["popis"];
+                $p->pocet = $polozka["pocet"];
                 $p->id_oprava = $oprava->id;
                 $p->id_skupina = $polozka["id_skupina"];
                 // ulozit
@@ -150,6 +153,7 @@ class OpravyPresenter extends BasePresenter {
             $p = new PolozkaOpravy();
             $p->cena = $polozka["cena"];
             $p->popis = $polozka["popis"];
+            $p->pocet = $polozka["pocet"];
             $p->id = $polozka["id"];
             $p->id_skupina = $polozka["id_skupina"];
             $this->template->polozky[] = $p;
@@ -164,8 +168,16 @@ class OpravyPresenter extends BasePresenter {
         
     }
 
-    public function renderSeznam() {
+    public function actionSeznam($id_automat) {
         
+    }
+    
+    public function renderSeznam($id_automat = 1) {
+        $vp = new VisualPaginator($this, 'vp');
+        $paginator = $vp->getPaginator();
+        $paginator->itemsPerPage = 20;
+        $paginator->itemCount = count($this ->akceModel->getAkce(array("datum" => "DESC"), array("id_automat" => $id_automat), $paginator->offset, $paginator->itemsPerPage));
+        $this->template->items = $this ->akceModel->getAkce(array("datum" => "DESC"), array("id_automat" => $id_automat), $paginator->offset, $paginator->itemsPerPage);
     }
     
     
@@ -175,7 +187,6 @@ class OpravyPresenter extends BasePresenter {
 
         return $this->skupinyModel_var;
     }
-    
     
     public function getOpravyModel() {
         if(!isset($this->opravyModel_var))

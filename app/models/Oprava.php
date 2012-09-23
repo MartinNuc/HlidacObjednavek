@@ -4,7 +4,7 @@
  *
  * @author mist
  */
-class Opravy extends DibiRow
+class Oprava extends DibiRow
 {
     public function __construct($arr = array())
     {
@@ -35,9 +35,9 @@ class Opravy extends DibiRow
      */
     public function fetch()
     {
-        $res = new Akce();
+        $res = new Oprava();
 
-        if (isset($this->id_akce))
+        if (isset($this->id_oprava))
             $res = dibi::query('SELECT * FROM [oprava] WHERE [id_oprava]=%i', $this->id_oprava)->setRowClass('Oprava')->fetch();
         else return false;
         

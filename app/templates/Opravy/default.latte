@@ -5,6 +5,7 @@
 {block content}
 <h1>{block #title}Oprava{/block}</h1>
 {snippet oprava}
+<a class="ajax" href="{plink Clean!}"><img alt="Vyčistit" src="{$basePath}/images/delete.png"></a>
 <div class="opravy">
     {foreach $skupiny as $item}
         <h2>{$item->nazev}</h2>
@@ -44,5 +45,6 @@
             {control opravaPolozkaForm-$item->id_skupina}
         </div>
     {/foreach}
+    {control zadatOpravuForm}
 </div>
 {/snippet}

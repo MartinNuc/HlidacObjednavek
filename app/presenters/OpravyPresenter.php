@@ -13,9 +13,25 @@ use Nette\Diagnostics\Debugger;
 class OpravyPresenter extends BasePresenter {
 
     private $skupinyModel_var = NULL;
+    private $akceModel_var = NULL;
+    private $opravyModel_var = NULL;
+    
+    /** @persistent */
+    public $id_automat = "";
     
     protected function startup() {
         parent::startup();
+    }
+    
+    protected function createComponentZadatOpravuForm($name)
+    {
+        $form = new Form($this, $name);
+        $form->addDatePicker('datum', "Datum: ")
+            ->addRule(Form::VALID, 'Zadané datum není platné.')
+            ->setDefaultValue(date("d. m. Y"));
+        $form->addSubmit('novaOprava', 'Zadat');
+        $form->onSuccess[] = callback($this, 'zadatOpravu');
+        return $form;
     }
 
     protected function createComponentOpravaPolozkaForm()
@@ -69,11 +85,56 @@ class OpravyPresenter extends BasePresenter {
         }
     }	
     
-    public function actionDefault() {
+    public function handleClean()
+    {
+        $this->context->polozkyOpravy->clean();
         
+        if (!$this->isAjax())
+            $this->redirect('this');
+        else {
+            $this->invalidateControl('oprava');
+        }
+    }	
+     
+    public function zadatOpravu($form)
+    {
+        $polozky = $this->context->polozkyOpravy->getItems();
+        if (count($polozky) > 0)
+        {
+            // ulozit novou opravu
+            $oprava = new Oprava();
+            $oprava->id_automat = $this->id_automat;
+            $oprava->datum = $form['datum']->getValue();  // datum objednavky
+            $oprava->id=$this->opravyModel->addOprava($oprava);
+
+            foreach ($polozky as $polozka)
+            {
+                $p = new Akce();
+                $p->cena = $polozka["cena"];
+                $p->popis = $polozka["popis"];
+                $p->id_oprava = $oprava->id;
+                $p->id_skupina = $polozka["id_skupina"];
+                // ulozit
+                $this->akceModel->addAkce($p);
+            }
+        }
+        
+        $polozky = $this->context->polozkyOpravy->clean();
+        
+        if (!$this->isAjax())
+            $this->redirect('this');
+        else {
+            $this->invalidateControl('oprava');
+        }
+    }	
+    
+    
+    public function actionDefault($id_automat = 1) {
+        $this->id_automat = $id_automat;        
     }
     
-    public function renderDefault() {
+    public function renderDefault($id_automat = 1) {
+        $this->id_automat = $id_automat;
         if (!$this->getUser()->isInRole('admin'))
             $this->redirect('sign:in');
 
@@ -113,6 +174,21 @@ class OpravyPresenter extends BasePresenter {
             $this->skupinyModel_var = new SkupinyModel();
 
         return $this->skupinyModel_var;
+    }
+    
+    
+    public function getOpravyModel() {
+        if(!isset($this->opravyModel_var))
+            $this->opravyModel_var = new OpravyModel();
+
+        return $this->opravyModel_var;
+    }   
+    
+    public function getAkceModel() {
+        if(!isset($this->akceModel_var))
+            $this->akceModel_var = new AkceModel();
+
+        return $this->akceModel_var;
     }
 
 }

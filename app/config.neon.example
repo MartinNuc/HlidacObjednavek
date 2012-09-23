@@ -24,7 +24,11 @@ common:
 
                 authenticator: 
                     factory: [@model, createAuthenticatorService]
-		
+
+services:
+        polozkyOpravy:
+                class: PolozkyOpravy
+                arguments: [@session]
 
 production < common:
     database:

@@ -4,8 +4,45 @@
 
 {block content}
 <h1>{block #title}Oprava{/block}</h1>
-{snippet usersForm}
-    {control myForm begin}
-    {control myForm body}
-    {control myForm end}
+{snippet oprava}
+<div class="opravy">
+    {foreach $skupiny as $item}
+        <h2>{$item->nazev}</h2>
+
+        <table class="table opravy">
+            <thead>
+                <tr>
+                    <th>Popis</th>
+                    <th>Cena</th>
+                    <th>&nbsp;</th>
+                </tr>
+            </thead>
+            <tbody>
+                {assign $i => 0}
+                {foreach $polozky as $polozka}
+                    {if $polozka->id_skupina == $item->id_skupina}
+                        {if $i % 2 }
+                             <tr class="slight_border licha">
+                        {else}
+                             <tr class="slight_border suda">
+                        {/if}
+
+                        <td>
+                        {$polozka->popis}
+                        </td><td>
+                        {$polozka->cena}
+                        </td><td>
+                        <a  class="ajax delete" href="{plink Delete!, $polozka->id}"><img alt="Smazat" src="{$basePath}/images/delete.png"></a>
+                        {assign $i => $i+1}
+                        </td>
+                        </tr>
+                    {/if}
+                {/foreach}
+            </tbody>
+        </table>
+        <div class="oprava_skupina">
+            {control opravaPolozkaForm-$item->id_skupina}
+        </div>
+    {/foreach}
+</div>
 {/snippet}

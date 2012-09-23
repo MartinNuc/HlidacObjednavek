@@ -2,6 +2,9 @@
 use Nette\Forms\Container;
 use Nette\Application\UI\Form;
 use Nette\Forms\Controls\SubmitButton;
+use Nette\Application\UI\Multiplier;
+use Nette\Utils\Html;
+use Nette\Diagnostics\Debugger;
 /**
  * Description of OpravyPresenter
  *
@@ -11,61 +14,85 @@ class OpravyPresenter extends BasePresenter {
 
     private $skupinyModel_var = NULL;
     
-    /**
-     * (non-phpDoc)
-     *
-     * @see Nette\Application\Presenter#startup()
-     */
     protected function startup() {
         parent::startup();
-        Kdyby\Extension\Forms\Replicator\Replicator::register();
     }
 
-    protected function createComponentMyForm($name)
+    protected function createComponentOpravaPolozkaForm()
     {
-        $form = new Form;
-        
-        $skupiny = $this->model->getSkupiny();
-        foreach ($skupiny as $skupina)
-        {
-            $form->addGroup($skupina->nazev, TRUE);
-            // jméno, továrnička, výchozí počet
-            $replicator = $form->addDynamic('polozka' . $skupina->id_skupina, function (Container $container) use ($skupina) {
-            $container->addText('popis' . $skupina->id_skupina, 'Popis');
-            $container->addText('cena' . $skupina->id_skupina, 'Cena')->setRequired();
+        return new Multiplier(function ($itemId) {
+            $form = new Nette\Application\UI\Form;
+            $form->getElementPrototype()->class('ajax');
+            $renderer = $form->getRenderer();
 
-            $container->addSubmit('remove' . $skupina->id_skupina, 'Smazat')
-            ->addRemoveOnClick();
-            }, 1);
-            
-            $replicator->addSubmit('add' . $skupina->id_skupina, 'Přidat')
-            ->addCreateOnClick(TRUE);
+            $renderer->wrappers['controls']['container'] = NULL;
+            $renderer->wrappers['label']['container'] = NULL;
+            $renderer->wrappers['control']['container'] = NULL;
+            $renderer->wrappers['pair']['container'] = \Nette\Utils\Html::el('div')->class('oprava_polozka');
 
-        }
-        $form->addSubmit('send', 'Zpracovat')
-        ->onClick[] = callback($this, 'MyFormSubmitted');
-        $this[$name] = $form;
-        return $form;
-    }
-
-
-
-    /**
-    * @param SubmitButton $button
-    */
-    public function MyFormSubmitted(SubmitButton $button)
-    {
-        // jenom naplnění šablony, bez přesměrování
-        $this->getSession('values')->users = $button->form->values;
-        $this->redirect('this');
+            $form->addText('popis', '')->setAttribute('autoComplete', "off")->addRule(Form::FILLED, 'Zadejte popis.');
+            $form->addText('cena', '')->setAttribute('autoComplete', "off")->addRule(Form::FILLED, 'Zadejte cenu.');
+            $form->addHidden('itemId', $itemId);
+            $form->addSubmit('novaPolozka', 'Přidat')->setAttribute('class', 'btnPolozka');
+            $form->onSuccess[] = callback($this, 'novaPolozka_submit');
+            return $form;
+        });
     }
     
-	
+    public function novaPolozka_submit($form)
+    {
+        // pridat do session polozku
+        
+        $pol = new PolozkaOpravy();
+        $pol->popis = $form['popis']->getValue();
+        $pol->cena = $form['cena']->getValue();
+        $pol->id_skupina = $form['itemId']->getValue();
+
+        $this->context->polozkyOpravy->add($pol);
+
+        if (!$this->isAjax())
+            $this->redirect('this');
+        else {
+            $form->setValues(array(), TRUE);
+            $this->invalidateControl('oprava');
+        }
+    }
+    
+    public function handleDelete($id)
+    {
+        $this->context->polozkyOpravy->remove($id);
+        
+        if (!$this->isAjax())
+            $this->redirect('this');
+        else {
+            $this->invalidateControl('oprava');
+        }
+    }	
+    
     public function actionDefault() {
         
     }
     
     public function renderDefault() {
+        if (!$this->getUser()->isInRole('admin'))
+            $this->redirect('sign:in');
+
+        // zjistit skupiny z DB
+        $this->template->skupiny = $this -> model -> getSkupiny();
+        
+        //
+        // trojrozmerne pole [idskupiny][poradi polozky][sloupec]
+        //
+        $this->template->polozky = array();
+        foreach ($this->context->polozkyOpravy->getItems() as $polozka)
+        {
+            $p = new PolozkaOpravy();
+            $p->cena = $polozka["cena"];
+            $p->popis = $polozka["popis"];
+            $p->id = $polozka["id"];
+            $p->id_skupina = $polozka["id_skupina"];
+            $this->template->polozky[] = $p;
+        }
     } 
 
     public function actionEdit() {

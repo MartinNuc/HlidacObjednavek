@@ -46,9 +46,9 @@ class OpravyPresenter extends BasePresenter {
             $renderer->wrappers['control']['container'] = NULL;
             $renderer->wrappers['pair']['container'] = \Nette\Utils\Html::el('div')->class('oprava_polozka');
 
-            $form->addText('pocet', '')->setAttribute('autoComplete', "off")->addRule(Form::FILLED, 'Zadejte počet.');
+            $form->addText('pocet', '')->setAttribute('autoComplete', "off")->addRule(Form::FILLED, 'Zadejte počet.')->addRule(Form::INTEGER, 'Zadejte číslo.');
             $form->addText('popis', '')->setAttribute('autoComplete', "off")->addRule(Form::FILLED, 'Zadejte popis.');
-            $form->addText('cena', '')->setAttribute('autoComplete', "off")->addRule(Form::FILLED, 'Zadejte cenu.');
+            $form->addText('cena', '')->setAttribute('autoComplete', "off")->addRule(Form::FILLED, 'Zadejte cenu.')->addRule(Form::FLOAT, 'Zadejte číslo.');
             $form->addHidden('itemId', $itemId);
             $form->addSubmit('novaPolozka', 'Přidat')->setAttribute('class', 'btnPolozka');
             $form->onSuccess[] = callback($this, 'novaPolozka_submit');
@@ -59,31 +59,60 @@ class OpravyPresenter extends BasePresenter {
     public function novaPolozka_submit($form)
     {
         // pridat do session polozku
-        
-        $pol = new PolozkaOpravy();
-        $pol->pocet = $form['pocet']->getValue();
-        $pol->popis = $form['popis']->getValue();
-        $pol->cena = $form['cena']->getValue();
-        $pol->id_skupina = $form['itemId']->getValue();
-
-        $this->context->polozkyOpravy->add($pol);
+        if ($form['itemId']->getValue() != "")
+        {
+            $pol = new PolozkaOpravy();
+            $pol->pocet = $form['pocet']->getValue();
+            $pol->popis = $form['popis']->getValue();
+            $pol->cena = $form['cena']->getValue();
+            $pol->id_skupina = $form['itemId']->getValue();
+            $this->context->polozkyOpravy->add($pol);
+        }
 
         if (!$this->isAjax())
             $this->redirect('this');
         else {
-            $form->setValues(array(), TRUE);
+            $form['pocet']->setValue("");
+            $form['popis']->setValue("");
+            $form['cena']->setValue("");
             $this->invalidateControl('oprava');
         }
     }
     
-    public function handleDelete($id)
+   public function handleDelete($id_polozka)
     {
-        $this->context->polozkyOpravy->remove($id);
+        $this->context->polozkyOpravy->remove($id_polozka);
         
         if (!$this->isAjax())
             $this->redirect('this');
         else {
             $this->invalidateControl('oprava');
+        }
+    }	
+    
+    public function handleDeleteAkce($id_akce)
+    {
+        $akce = new Akce();
+        $akce->id_akce = $id_akce;
+        $akce->delete();
+        
+        if (!$this->isAjax())
+            $this->redirect('this');
+        else {
+            $this->invalidateControl('stranky');
+        }
+    }	
+    
+    public function handleDeleteOprava($id_oprava)
+    {
+        $akce = new Oprava();
+        $akce->id_oprava = $id_oprava;
+        $akce->delete();
+        
+        if (!$this->isAjax())
+            $this->redirect('this');
+        else {
+            $this->invalidateControl('stranky');
         }
     }	
     
@@ -136,6 +165,19 @@ class OpravyPresenter extends BasePresenter {
         $this->id_automat = $id_automat;        
     }
     
+    public function renderDetail($id_oprava)
+    {
+        if ($id_oprava == null)
+            $this->redirect('hlidac:default');
+        
+        //SELECT sum(cena*pocet) FROM opravy o left join akce using (id_oprava) group by id_oprava
+        $vp = new VisualPaginator($this, 'vp');
+        $paginator = $vp->getPaginator();
+        $paginator->itemsPerPage = 20;
+        $paginator->itemCount = count($this->akceModel->getAkce(array("datum" => "DESC"), array("id_oprava" => $id_oprava), $paginator->offset, $paginator->itemsPerPage));
+        $this->template->items = $this->akceModel->getAkce(array("datum" => "DESC"), array("id_oprava" => $id_oprava), $paginator->offset, $paginator->itemsPerPage);
+    }
+    
     public function renderDefault($id_automat = 1) {
         $this->id_automat = $id_automat;
         if (!$this->getUser()->isInRole('admin'))
@@ -148,16 +190,23 @@ class OpravyPresenter extends BasePresenter {
         // trojrozmerne pole [idskupiny][poradi polozky][sloupec]
         //
         $this->template->polozky = array();
+        $cena = 0;
         foreach ($this->context->polozkyOpravy->getItems() as $polozka)
         {
             $p = new PolozkaOpravy();
             $p->cena = $polozka["cena"];
             $p->popis = $polozka["popis"];
             $p->pocet = $polozka["pocet"];
+            
+            $cena += $p->cena * $p->pocet;
+            
             $p->id = $polozka["id"];
             $p->id_skupina = $polozka["id_skupina"];
             $this->template->polozky[] = $p;
+            //Debugger::log($p->id . " -> " . $p->popis);
         }
+        $this->template->cena = $cena;
+        
     } 
 
     public function actionEdit() {
@@ -176,8 +225,8 @@ class OpravyPresenter extends BasePresenter {
         $vp = new VisualPaginator($this, 'vp');
         $paginator = $vp->getPaginator();
         $paginator->itemsPerPage = 20;
-        $paginator->itemCount = count($this ->akceModel->getAkce(array("datum" => "DESC"), array("id_automat" => $id_automat), $paginator->offset, $paginator->itemsPerPage));
-        $this->template->items = $this ->akceModel->getAkce(array("datum" => "DESC"), array("id_automat" => $id_automat), $paginator->offset, $paginator->itemsPerPage);
+        $paginator->itemCount = count($this->opravyModel->getOpravy(array("datum" => "DESC"), array("id_automat" => $id_automat), $paginator->offset, $paginator->itemsPerPage));
+        $this->template->items = $this->opravyModel->getOpravy(array("datum" => "DESC"), array("id_automat" => $id_automat), $paginator->offset, $paginator->itemsPerPage);
     }
     
     

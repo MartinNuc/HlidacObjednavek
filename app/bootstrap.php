@@ -36,6 +36,7 @@ Container::extensionMethod('addDatePicker', function (Container $container, $nam
     return $container[$name] = new JanTvrdik\Components\DatePicker($label);
 });
 
+\Nette\Diagnostics\Debugger::$bar->addPanel(new SessionPanel($container->session));
 
 // Configure and run the application!
 $application = $container->application;

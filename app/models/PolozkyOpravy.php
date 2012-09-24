@@ -31,6 +31,7 @@ class PolozkyOpravy  extends Nette\Object
  
         public function remove($id)
         {
+            $this->opravy[$id] = null;
             unset($this->opravy[$id]);
         }
         

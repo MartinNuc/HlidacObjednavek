@@ -31,11 +31,11 @@ form tr:hover, form td a:hover{ border: none; background: white;}
     color: #00BB00;
 }
 
-#frm-zadatOpravuForm { clear: left;}
+#cena { clear: left;}
 
 table.opravy
 {
-    width: 420px;
+    width: 820px;
 }
 
 .button, button {

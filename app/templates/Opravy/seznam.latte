@@ -10,10 +10,7 @@
     <thead>
         <tr>
             <th>Datum</th>
-            <th>Popis</th>
-            <th>Počet</th>
-            <th>Cena</th>
-            <th>Skupina</th>
+            <th>Celková cena</th>
             <th>&nbsp;</th>
         </tr>
     </thead>
@@ -23,6 +20,7 @@
         {/if}
 
 	{assign $i => 0}
+        {assign $cena_celkem => 0}
 	{foreach $items as $item}	
 		{if $i % 2 }
                      <tr class="slight_border licha">
@@ -31,21 +29,19 @@
                 {/if}
 
 		<td>
-		{$item->formatovane_datum}
+                    <a href="{plink detail, $item->id_oprava}">{$item->formatovane_datum}</a>
                 </td><td>
-                {$item->popis}
+                {$item->cena |number:2:',':' '} Kč
                 </td><td>
-                {$item->pocet}
-                </td><td>
-                {$item->cena |number:2:',':' '}
-                </td><td>
-                {$item->nazev}
-                </td><td>
-		<a class="ajax delete" href="{plink Delete!, $item->id_akce}"><img alt="Delete" src="{$basePath}/images/delete.png"></a>
+		<a class="ajax delete" href="{plink DeleteOprava!, $item->id_oprava}"><img alt="Delete" src="{$basePath}/images/delete.png"></a>
 		{assign $i => $i+1}
+                {assign $cena_celkem => $cena_celkem + $item->cena}
 		</td>
 		</tr>
 	{/foreach}
     </tbody>
 </table>
+<p>
+Celková cena za toto období: {$cena_celkem |number:2:',':' '} Kč
+</p>
 {/snippet}

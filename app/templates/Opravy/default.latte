@@ -34,7 +34,7 @@
                         </td><td>
                         {$polozka->popis}
                         </td><td>
-                        {$polozka->cena}
+                        {$polozka->cena |number:2:',':' '} Kč
                         </td><td>
                         <a  class="ajax delete" href="{plink Delete!, $polozka->id}"><img alt="Smazat" src="{$basePath}/images/delete.png"></a>
                         {assign $i => $i+1}
@@ -48,6 +48,7 @@
             {control opravaPolozkaForm-$item->id_skupina}
         </div>
     {/foreach}
+    <div id="cena">Cena: {$cena |number:2:',':' '} Kč</div>
     {control zadatOpravuForm}
 </div>
 {/snippet}

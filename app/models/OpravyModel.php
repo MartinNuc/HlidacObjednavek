@@ -17,8 +17,9 @@ class OpravyModel {
         public function getOpravy($order = NULL, $where = NULL, $offset = NULL, $limit = NULL)
         {
              return dibi::query(
-                        'SELECT * FROM [opravy] ',
+                        'SELECT id_oprava, id_automat,  date_format(datum, "%e. %c. %Y") as formatovane_datum, sum(cena*pocet) as cena FROM [opravy] left join [akce] using (id_oprava) ',
                         '%if', isset($where), 'WHERE %and', isset($where) ? $where : array(), '%end',
+                        'GROUP BY [opravy.id_oprava]',
                         '%if', isset($order), 'ORDER BY %by', $order, '%end',
                         '%if', isset($limit), 'LIMIT %i %end', $limit,
                         '%if', isset($offset), 'OFFSET %i %end', $offset

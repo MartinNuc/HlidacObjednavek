@@ -161,7 +161,10 @@ class OpravyPresenter extends BasePresenter {
     }	
     
     
-    public function actionDefault($id_automat = 1) {
+    public function actionDefault($id_automat) {
+        if ($id_automat == null)
+            $this->redirect('hlidac:default');
+        
         $this->id_automat = $id_automat;        
     }
     
@@ -178,7 +181,10 @@ class OpravyPresenter extends BasePresenter {
         $this->template->items = $this->akceModel->getAkce(array("datum" => "DESC"), array("id_oprava" => $id_oprava), $paginator->offset, $paginator->itemsPerPage);
     }
     
-    public function renderDefault($id_automat = 1) {
+    public function renderDefault($id_automat) {
+        if ($id_automat == null)
+            $this->redirect('hlidac:default');
+                
         $this->id_automat = $id_automat;
         if (!$this->getUser()->isInRole('admin'))
             $this->redirect('sign:in');
@@ -218,10 +224,14 @@ class OpravyPresenter extends BasePresenter {
     }
 
     public function actionSeznam($id_automat) {
-        
+        if ($id_automat == null)
+            $this->redirect('hlidac:default');
     }
     
-    public function renderSeznam($id_automat = 1) {
+    public function renderSeznam($id_automat) {
+        if ($id_automat == null)
+            $this->redirect('hlidac:default');
+        
         $vp = new VisualPaginator($this, 'vp');
         $paginator = $vp->getPaginator();
         $paginator->itemsPerPage = 20;

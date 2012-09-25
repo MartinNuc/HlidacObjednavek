@@ -48,6 +48,41 @@ class AutomatyModel
              return array();
         }
         
+        public function getAutomatyHledani($order = NULL, $where = NULL, $offset = NULL, $limit = NULL, $filtr = NULL)
+        {
+            try {
+                // prevod parametru WHERE do formy LIKE
+                $and = array();
+                $and[] = array( '%b', true );
+                foreach( $where AS $colName => $colVal )
+                {
+                     $and[] = array( "$colName LIKE '%$colVal%'");
+                }
+
+                 $ret = dibi::query(
+                        'SELECT technici.jmeno as technik_jmeno, technici.prijmeni as technik_prijmeni,
+                            obchodni_zastupci.jmeno as oz_jmeno, obchodni_zastupci.telefon as oz_telefon,
+                            zakaznici.nazev as zakaznik_nazev, zakaznici.hidden as zakaznik_hidden, zakaznici.adresa as zakaznik_adresa, zakaznici.*, automaty.*,
+                            oblasti.nazev as oblast_nazev
+                            FROM [automaty] LEFT JOIN [zakaznici] USING (id_zakaznik)
+                            LEFT JOIN [oblasti] USING (id_oblast)
+                            LEFT JOIN [obchodni_zastupci] USING (id_obchodni_zastupce)
+                            LEFT JOIN [technici] USING (id_oblast)',
+                           ' WHERE',
+                        '%if', isset($and), '%and', isset($and) ? $and : array(), '%end',
+                        '%if', isset($order), 'ORDER BY %by', $order, '%end',
+                        '%if', isset($limit), 'LIMIT %i %end', $limit,
+                        '%if', isset($offset), 'OFFSET %i %end', $offset
+                    )->setRowClass('Automat');
+                return $ret;
+             }
+            catch (DibiDriverException $e)
+            {
+                Debugger::log("getAutomatyHledani: " . dibi::$sql);
+            }
+             return array();
+        }
+        
         public function getAutomatyVystup($order = NULL, $where = NULL, $filtr_oblasti = NULL)
         {
              try{

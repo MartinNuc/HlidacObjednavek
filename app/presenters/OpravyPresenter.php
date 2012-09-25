@@ -154,7 +154,7 @@ class OpravyPresenter extends BasePresenter {
         $polozky = $this->context->polozkyOpravy->clean();
         
         if (!$this->isAjax())
-            $this->redirect('this');
+            $this->redirect('opravy:seznam', $this->id_automat);
         else {
             $this->invalidateControl('oprava');
         }
@@ -237,6 +237,7 @@ class OpravyPresenter extends BasePresenter {
         $paginator->itemsPerPage = 20;
         $paginator->itemCount = count($this->opravyModel->getOpravy(array("datum" => "DESC"), array("id_automat" => $id_automat), $paginator->offset, $paginator->itemsPerPage));
         $this->template->items = $this->opravyModel->getOpravy(array("datum" => "DESC"), array("id_automat" => $id_automat), $paginator->offset, $paginator->itemsPerPage);
+        $this->template->id_automat = $id_automat;
     }
     
     

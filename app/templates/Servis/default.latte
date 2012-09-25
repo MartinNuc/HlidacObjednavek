@@ -1,0 +1,59 @@
+{block navigace}
+<a href="{plink Hlidac:default}">Hlídač objednávek</a> / {include #title}
+{/block}
+
+{block content}
+<h1>{block #title}Servis{/block}</h1>
+{snippet formFiltrAutomaty}
+    {control filtrAutomaty}
+{/snippet}
+{snippet stranky}
+{control vp}
+<table class="table automaty">
+    <thead>
+        <tr>
+            <th>Název</th>
+            <th>BMB</th>
+            <th>Výrobní číslo</th>
+            <th>Layout</th>
+            <th>Umístění</th>
+            <th>Adresa</th>
+            <th>Zákazník</th>
+            <th>Oblast</th>
+        </tr>
+    </thead>
+    <tbody>
+        {if count($items) == 0}
+            <tr class="licha"><td colspan="9">Žádná data</td></tr>
+        {/if}
+	{assign $i => 0}
+	{foreach $items as $item}	
+		{if $i % 2 }
+                     <tr class="slight_border licha">
+                {else}
+                     <tr class="slight_border suda">
+                {/if}
+
+		<td>
+		<a href="{plink opravy:default, $item->id_automat}">{$item->nazev}</a>
+		</td><td>
+                    {$item->bmb}
+		</td><td>
+                    {$item->vyrobni_cislo}
+                </td><td>
+                    {$item->layout}
+                </td><td>
+                    {$item->umisteni}
+                </td><td>
+                    {$item->adresa}
+                </td><td>
+                    {$item->zakaznik_nazev}
+                </td><td>
+                    {$item->oblast_nazev}
+		{assign $i => $i+1}
+		</td>
+		</tr>
+	{/foreach}
+    </tbody>
+</table>
+{/snippet}

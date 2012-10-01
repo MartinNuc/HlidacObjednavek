@@ -1,0 +1,69 @@
+{block navigace}
+<a href="{plink Hlidac:default}">Hlídač objednávek</a> / {include #title}
+{/block}
+
+{block content}
+<h1>{block #title}Historie umístění automatu{/block}</h1>
+
+{snippet stranky}
+{control vp}
+<table class="table zakaznici">
+    <thead>
+        <tr>
+            <th>Název</th>
+            <th>Adresa</th>
+            <th>IČ</th>
+            <th>Telefon</th>
+            <th>email</th>
+            <th>Osobní zákazník</th>
+            <th>Do</th>
+        </tr>
+    </thead>
+    <tbody>
+        {if count($items) == 0}
+            <tr class="licha"><td colspan="7">Žádná data</td></tr>
+        {/if}
+	{assign $i => 0}
+	{foreach $items as $item}
+            {if $i % 2 }
+                 <tr class="slight_border licha">
+            {else}
+                 <tr class="slight_border suda">
+            {/if}
+
+            <td>
+            {if $item->hidden==true || $item->id_zakaznik==0}
+                {$item->nazev}
+            {else}
+                <a href="{plink Zakaznici:Edit, $item->id_zakaznik}">{$item->nazev}</a>
+            {/if}
+            <td>
+            {$item->adresa}
+            </td>
+            <td>
+            {$item->ico}
+            </td>
+            <td>
+            {$item->telefon}
+            </td>
+            <td>
+            {if $item->email != ""}
+                <a href="mailto:{$item->email}">{$item->email}</a>
+            {/if}
+            </td>
+            <td>
+            {if $item->id_zakaznik == 0}
+                &nbsp;
+            {else}            
+                {$item->osobni_zakaznik ? "Ano" : "Ne"}
+            {/if}
+            </td>
+            <td>
+                {$item->formatovane_datum}
+            {assign $i => $i+1}
+            </td>
+            </tr>
+	{/foreach}
+    </tbody>
+</table>
+{/snippet}

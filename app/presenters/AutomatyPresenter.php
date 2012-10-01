@@ -11,6 +11,7 @@ class AutomatyPresenter extends BasePresenter {
     private $automatyModel_var = NULL;
     private $kontaktyModel_var = NULL;
     private $oblastiModel_var = NULL;
+    private $presunyModel_var = NULL;
     
     /** @persistent */
     public $filtr_automaty = '';
@@ -344,6 +345,34 @@ class AutomatyPresenter extends BasePresenter {
         if ($this->isAjax())
             $this->invalidateControl('stranky');
     }
+    
+    /**
+     * Action edit of presenter
+     * @param type $id editted automat
+     */
+    public function actionHistorie($id_automat) {
+        
+    }
+
+    /**
+     * Render edit of presenter
+     * @param type $id id of eddited automat
+     */
+    public function renderHistorie($id_automat) {
+        if (!$this->getUser()->isInRole('admin'))
+            $this->redirect('sign:in');
+
+        $vp = new VisualPaginator($this, 'vp');
+        $paginator = $vp->getPaginator();
+        $paginator->itemsPerPage = 20;
+        $paginator->itemCount = count($this -> presunyModel -> getPresuny(NULL, array("id_automat" => $id_automat), NULL, NULL));
+        $items = $this -> presunyModel->getPresuny($order = array('datum' => 'DESC'), array("id_automat" => $id_automat),
+                $paginator->offset, $paginator->itemsPerPage);
+        
+        $this->template->items = $items;
+        if ($this->isAjax())
+            $this->invalidateControl('stranky');
+    }
 
     /**
      * Action edit of presenter
@@ -433,5 +462,12 @@ class AutomatyPresenter extends BasePresenter {
             $this->kontaktyModel_var = new KontaktyModel();
 
         return $this->kontaktyModel_var;
+    }
+    
+    public function getPresunyModel() {
+        if(!isset($this->presunyModel_var))
+            $this->presunyModel_var = new PresunyModel();
+
+        return $this->presunyModel_var;
     }
 }

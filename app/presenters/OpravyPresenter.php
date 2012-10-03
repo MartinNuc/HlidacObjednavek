@@ -89,45 +89,51 @@ class OpravyPresenter extends BasePresenter {
      */
     public function pridatPolozku_submit($form)
     {
-        $p = new Akce();
-        $p->cena = $form['cena']->getValue();
-        $p->popis = $form['popis']->getValue();
-        $p->pocet = $form['pocet']->getValue();
-        $p->id_oprava = $form['id']->getValue();
-        $p->id_skupina = $form['skupina']->getValue();
-        // ulozit
-        $this->akceModel->addAkce($p);
+        if($form->isSuccess())
+        {
+            $p = new Akce();
+            $p->cena = $form['cena']->getValue();
+            $p->popis = $form['popis']->getValue();
+            $p->pocet = $form['pocet']->getValue();
+            $p->id_oprava = $form['id']->getValue();
+            $p->id_skupina = $form['skupina']->getValue();
+            // ulozit
+            $this->akceModel->addAkce($p);
 
-        if (!$this->isAjax())
-            $this->redirect('this');
-        else {
-            $form['pocet']->setValue("");
-            $form['popis']->setValue("");
-            $form['cena']->setValue("");
-            $this->invalidateControl('stranky');
+            if (!$this->isAjax())
+                $this->redirect('this');
+            else {
+                $form['pocet']->setValue("");
+                $form['popis']->setValue("");
+                $form['cena']->setValue("");
+                $this->invalidateControl('stranky');
+            }
         }
     }
     
     public function novaPolozka_submit($form)
     {
-        // pridat do session polozku
-        if ($form['itemId']->getValue() != "")
+        if($form->isSuccess())
         {
-            $pol = new PolozkaOpravy();
-            $pol->pocet = $form['pocet']->getValue();
-            $pol->popis = $form['popis']->getValue();
-            $pol->cena = $form['cena']->getValue();
-            $pol->id_skupina = $form['itemId']->getValue();
-            $this->context->polozkyOpravy->add($pol);
-        }
+            // pridat do session polozku
+            if ($form['itemId']->getValue() != "")
+            {
+                $pol = new PolozkaOpravy();
+                $pol->pocet = $form['pocet']->getValue();
+                $pol->popis = $form['popis']->getValue();
+                $pol->cena = $form['cena']->getValue();
+                $pol->id_skupina = $form['itemId']->getValue();
+                $this->context->polozkyOpravy->add($pol);
+            }
 
-        if (!$this->isAjax())
-            $this->redirect('this');
-        else {
-            $form['pocet']->setValue("");
-            $form['popis']->setValue("");
-            $form['cena']->setValue("");
-            $this->invalidateControl('oprava');
+            if (!$this->isAjax())
+                $this->redirect('this');
+            else {
+                $form['pocet']->setValue("");
+                $form['popis']->setValue("");
+                $form['cena']->setValue("");
+                $this->invalidateControl('oprava');
+            }
         }
     }
     

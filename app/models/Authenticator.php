@@ -46,6 +46,8 @@ class Authenticator extends Nette\Object implements NS\IAuthenticator
                     $row->role = "user";
                 if ($row->role == "Administrátor")
                     $row->role = "admin";
+                if ($row->role == "Host")
+                    $row->role = "host";
 		return new NS\Identity($row->id_user, $row->role, $row->toArray());
 	}
 

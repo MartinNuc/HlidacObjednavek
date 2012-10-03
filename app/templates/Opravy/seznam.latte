@@ -4,7 +4,7 @@
 
 {block content}
 <a href="{plink opravy:default, $id_automat}">Zadat novou opravu</a>
-<h1>{block #title}Seznam oprav{/block}</h1>
+<h1>{block #title}Seznam oprav automatu {$automat->nazev} (BMB: {$automat->bmb}){/block}</h1>
 {snippet stranky}
 {control vp}
 <table class="table opravy">

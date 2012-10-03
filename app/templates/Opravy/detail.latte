@@ -42,7 +42,11 @@
                 </td><td>
                 {$item->nazev}
                 </td><td>
+                {if $user->isInRole('admin')}
 		<a class="ajax delete" href="{plink DeleteAkce!, $item->id_akce}"><img alt="Delete" src="{$basePath}/images/delete.png"></a>
+                {else}
+                &nbsp;
+                {/if}
 		{assign $i => $i+1}
                 {assign $cena_celkem => $cena_celkem + $item->cena*$item->pocet}
 		</td>
@@ -54,3 +58,9 @@
 Celková cena: {$cena_celkem |number:2:',':' '} Kč
 </p>
 {/snippet}
+{if $user->isInRole('admin')}
+    <h2>Přidání položky</h2>
+    {snippet form}
+        {control pridatPolozku}
+    {/snippet}
+{/if}

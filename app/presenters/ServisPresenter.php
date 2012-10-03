@@ -70,11 +70,10 @@ class ServisPresenter extends BasePresenter {
                 array("automaty.bmb" => $this->filtr_bmb, "automaty.layout" => $this->filtr_layout,
                     "automaty.vyrobni_cislo" => $this->filtr_vyrobni_cislo, "automaty.nazev" => $this->filtr_nazev),
                 NULL, NULL));
-        $items = $this -> model -> getAutomatyHledani(array('automaty.nazev' => 'ASC'),
+        $items = $this -> model -> getAutomatyHledani(array("id_oblast" => "DSC", "zakaznik_nazev" => "ASC"),
                 array("automaty.bmb" => $this->filtr_bmb, "automaty.layout" => $this->filtr_layout,
                     "automaty.vyrobni_cislo" => $this->filtr_vyrobni_cislo, "automaty.nazev" => $this->filtr_nazev),
                      $paginator->offset, $paginator->itemsPerPage);
-
         
         $this->template->items = $items;
         if ($this->isAjax())

@@ -31,7 +31,7 @@ class UsersPresenter extends BasePresenter {
         $form->addText('username', 'Přihlašovací jméno:')->setAttribute('autoComplete', "off")->addRule(Form::FILLED, 'Zadejte přihlašovací jméno.');
         $form->addPassword('password', 'Heslo:');
 
-        $pole = array("Uživatel", "Administrátor");
+        $pole = array("Uživatel", "Administrátor", "Host");
         $form->addSelect('role', 'Role:', $pole);
         
         $form->addSubmit('novyUser', 'Přidat');
@@ -73,7 +73,7 @@ class UsersPresenter extends BasePresenter {
         $form->addText('username', 'Přihlašovací jméno:')->setAttribute('autoComplete', "off")->addRule(Form::FILLED, 'Zadejte přihlašovací jméno.');
         $form->addPassword('password', 'Heslo:');
 
-        $pole = array("Uživatel", "Administrátor");
+        $pole = array("Uživatel", "Administrátor", "Host");
         $form->addSelect('role', 'Role:', $pole);
         
         $form->addHidden('id');
@@ -173,6 +173,8 @@ class UsersPresenter extends BasePresenter {
             $this["upravitUser"]["username"]->setValue($user->username);
             if ($user->role == "Administrátor")
                 $this["upravitUser"]["role"]->setValue(1);
+            else if ($user->role == "Host")
+                $this["upravitUser"]["role"]->setValue(2);
             else
                 $this["upravitUser"]["role"]->setValue(0);
          }

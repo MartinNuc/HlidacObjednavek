@@ -51,4 +51,107 @@
     <div id="cena">Cena: {$cena |number:2:',':' '} Kč</div>
     {control zadatOpravuForm}
 </div>
+<div id="detail_automatu">
+    <div class="objednavka_infoautomat">
+        <h2>Informace o automatu</h2>
+            <div class="obj_info_automat">
+                Automat: {$automat->nazev}<br/>
+                BMB: {$automat->bmb}<br/>
+                Výrobní číslo: {$automat->vyrobni_cislo}<br/>
+                Layout: {$automat->layout}<br/>
+                Technik: {$automat->technik_jmeno} {$automat->technik_prijmeni}<br/>
+                Umístění: {$automat->umisteni}<br/>
+                Adresa automatu: {$automat->adresa}<br/>
+                Oblast: {$automat->oblast_nazev}<br/>
+                <span class="hidden">{$automat->id_automat}</span>
+            </div>
+
+            <div class="objednavka_kontakty">
+                <h3>Kontakty</h3>
+                <table class="table objednavky_kontakty">
+                    <thead>
+                        <tr>
+                            <th>Jméno</th>
+                            <th>Telefon</th>
+                            <th>Email</th>
+                            <th>Poznámka</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {if count($kontakty) == 0}
+                            <tr class="licha"><td colspan="4">Žádná data</td></tr>
+                        {/if}
+                        {assign $i => 0}
+                        {foreach $kontakty as $item}
+                            {if $i % 2 }
+                                <tr class="slight_border licha">
+                            {else}
+                                <tr class="slight_border suda">
+                            {/if}
+                            <td>
+                                {$item->jmeno}
+                            </td>
+                            <td>
+                                {$item->telefon}
+                            </td>
+                            <td>
+                                {$item->email}
+                            </td>
+                            <td>
+                                {$item->poznamka}
+                            </td>
+                            </tr>
+                            {assign $i => $i+1}
+                        {/foreach}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{/snippet}
+
+<h1>Historie oprav</h1>
+{snippet historie}
+{control filtrOpravy}
+<div id="historie_objednavek">
+    <table class="objednavky_historie">
+        <thead>
+            <tr>
+                <th>&nbsp;</th>
+                <th>Datum</th>
+                <th>Celková cena</th>
+            </tr>
+        </thead>
+        <tbody>
+            {if count($items) == 0}
+                <tr class="licha"><td colspan="8">Žádná data</td></tr>
+            {/if}
+
+            {assign $i => 0}
+            {assign $cena_celkem => 0}
+            {foreach $items as $item}	
+                    {if $i % 2 }
+                         <tr class="slight_border licha">
+                    {else}
+                         <tr class="slight_border suda">
+                    {/if}
+
+                    <td>
+                        <a href="{plink detail, $item->id_oprava}">Detail</a>
+                    </td><td>
+                        {$item->formatovane_datum}
+                    </td><td>
+                    {$item->cena |number:2:',':' '} Kč
+                    {assign $i => $i+1}
+                    {assign $cena_celkem => $cena_celkem + $item->cena}
+                    </td>
+                    </tr>
+            {/foreach}
+        </tbody>
+    </table>
+</div>
+<p>
+Celková cena za toto období: {$cena_celkem |number:2:',':' '} Kč
+</p>
 {/snippet}

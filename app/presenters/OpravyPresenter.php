@@ -15,10 +15,17 @@ class OpravyPresenter extends BasePresenter {
     private $skupinyModel_var = NULL;
     private $akceModel_var = NULL;
     private $opravyModel_var = NULL;
+    private $kontaktyModel_var = NULL;
+    private $automatyModel_var = NULL;
     
     /** @persistent */
     public $id_automat = "";
     
+    /** @persistent */
+    public $filtr_od = NULL;
+    /** @persistent */
+    public $filtr_do = NULL;
+
     protected function startup() {
         parent::startup();
     }
@@ -54,6 +61,51 @@ class OpravyPresenter extends BasePresenter {
             $form->onSuccess[] = callback($this, 'novaPolozka_submit');
             return $form;
         });
+    }
+    
+    public function createComponentPridatPolozku($name)
+    {
+        $form = new Form($this, $name);
+        $form->addText('pocet', 'Počet')->setAttribute('autoComplete', "off")->addRule(Form::FILLED, 'Zadejte počet.')->addRule(Form::INTEGER, 'Zadejte číslo.');
+        $form->addText('popis', 'Popis')->setAttribute('autoComplete', "off")->addRule(Form::FILLED, 'Zadejte popis.');
+        $form->addText('cena', 'Cena')->setAttribute('autoComplete', "off")->addRule(Form::FILLED, 'Zadejte cenu.')->addRule(Form::FLOAT, 'Zadejte číslo.');
+        
+        foreach ($this->model->getSkupiny() as $key => $value)
+            $pole[$value->id_skupina]=$value->nazev;
+        
+        $form->addSelect('skupina', 'Skupina', $pole);
+
+        $form->addHidden('id');
+        $form->addSubmit('novaPolozka', 'Přidat');
+
+        $form->addButton('back', 'Zpět')->getControlPrototype()->class("back");
+        $form->onSuccess[] = callback($this, 'pridatPolozku_submit');
+        return $form;
+    }
+    
+    /**
+     * Button for editting area
+     * @param type $form name of form
+     */
+    public function pridatPolozku_submit($form)
+    {
+        $p = new Akce();
+        $p->cena = $form['cena']->getValue();
+        $p->popis = $form['popis']->getValue();
+        $p->pocet = $form['pocet']->getValue();
+        $p->id_oprava = $form['id']->getValue();
+        $p->id_skupina = $form['skupina']->getValue();
+        // ulozit
+        $this->akceModel->addAkce($p);
+
+        if (!$this->isAjax())
+            $this->redirect('this');
+        else {
+            $form['pocet']->setValue("");
+            $form['popis']->setValue("");
+            $form['cena']->setValue("");
+            $this->invalidateControl('stranky');
+        }
     }
     
     public function novaPolozka_submit($form)
@@ -160,6 +212,46 @@ class OpravyPresenter extends BasePresenter {
         }
     }	
     
+    public function createComponentFiltrOpravy($name)
+    {
+        $form = new Form($this, $name);
+        $form->getElementPrototype()->class('ajax');
+        $renderer = $form->getRenderer();
+        $renderer->wrappers['controls']['container'] = NULL;
+        $renderer->wrappers['label']['container'] = NULL;
+        $renderer->wrappers['control']['container'] = NULL;
+        $renderer->wrappers['pair']['container'] = \Nette\Utils\Html::el('div')->class('obj_filtr');
+        
+        $form->addDatePicker('od', "Od")
+            ->addRule(Form::VALID, 'Zadané datum není platné.')->setDefaultValue(Date('d. m. Y',strtotime($this->filtr_od)));
+        $form->addDatePicker('do', "Do")
+            ->addRule(Form::VALID, 'Zadané datum není platné.')->setDefaultValue(Date('d. m. Y'));
+
+        $form->addSubmit('filtrOpravy', 'Zobrazit opravy');
+        $form->onSuccess[] = callback($this, 'filtrOpravy_submit');
+        return $form;
+    }
+    
+    public function filtrOpravy_submit($form)
+    {
+        $datum = $form['od']->getValue();
+        if ($datum == "")
+            $this->filtr_od = NULL;
+        else
+            $this->filtr_od = $datum->format("Y-n-j");
+        
+        $datum = $form['do']->getValue();
+        if ($datum == "")
+            $this->filtr_do = NULL;
+        else
+            $this->filtr_do = $datum->format("Y-n-j");
+
+        if (!$this->isAjax())
+            $this->redirect('this');
+        else {
+            $this->invalidateControl('historie');
+        }
+    }    
     
     public function actionDefault($id_automat) {
         if ($id_automat == null)
@@ -172,6 +264,8 @@ class OpravyPresenter extends BasePresenter {
     {
         if ($id_oprava == null)
             $this->redirect('hlidac:default');
+        
+        $this["pridatPolozku"]["id"]->setValue($id_oprava);
         
         //SELECT sum(cena*pocet) FROM opravy o left join akce using (id_oprava) group by id_oprava
         $vp = new VisualPaginator($this, 'vp');
@@ -186,9 +280,13 @@ class OpravyPresenter extends BasePresenter {
             $this->redirect('hlidac:default');
                 
         $this->id_automat = $id_automat;
-        if (!$this->getUser()->isInRole('admin'))
-            $this->redirect('sign:in');
 
+        if ((isset($this->filtr_od) && isset($this->filtr_od)) == false)
+        {
+            $this->filtr_od = Date('Y-n-j',mktime(0,0,0,date('m')-5,date('d'),date('y')));
+            $this->filtr_do = Date('Y-n-j');
+        }
+        
         // zjistit skupiny z DB
         $this->template->skupiny = $this -> model -> getSkupiny();
         
@@ -212,6 +310,25 @@ class OpravyPresenter extends BasePresenter {
             //Debugger::log($p->id . " -> " . $p->popis);
         }
         $this->template->cena = $cena;
+        
+        $automat = new Automat();
+        $automat->id_automat = $id_automat;
+        //$automat->fetch();
+        $automat = $this -> automatyModel -> getAutomaty(NULL, array(
+                'id_automat' => $id_automat))->fetch();
+        $this->template->automat = $automat;
+        $this->template->kontakty = $this -> kontaktyModel -> getKontaktyInContext(NULL, array(
+            'id_automat' => $id_automat));
+        
+        $vp = new VisualPaginator($this, 'vp');
+        $paginator = $vp->getPaginator();
+        $paginator->itemsPerPage = 20;
+        $paginator->itemCount = count($this->opravyModel->getOpravy(array("datum" => "DESC"), 
+                array("id_automat" => $id_automat, array("datum <= %d", $this->filtr_do), array("datum >= %d", $this->filtr_od)),
+                $paginator->offset, $paginator->itemsPerPage));
+        $this->template->items = $this->opravyModel->getOpravy(array("datum" => "DESC"),
+                array("id_automat" => $id_automat, array("datum <= %d", $this->filtr_do), array("datum >= %d", $this->filtr_od)),
+                $paginator->offset, $paginator->itemsPerPage);
         
     } 
 
@@ -238,6 +355,10 @@ class OpravyPresenter extends BasePresenter {
         $paginator->itemCount = count($this->opravyModel->getOpravy(array("datum" => "DESC"), array("id_automat" => $id_automat), $paginator->offset, $paginator->itemsPerPage));
         $this->template->items = $this->opravyModel->getOpravy(array("datum" => "DESC"), array("id_automat" => $id_automat), $paginator->offset, $paginator->itemsPerPage);
         $this->template->id_automat = $id_automat;
+        $automat = new Automat();
+        $automat->id_automat = $id_automat;
+        $automat->fetch();
+        $this->template->automat = $automat;
     }
     
     
@@ -262,4 +383,17 @@ class OpravyPresenter extends BasePresenter {
         return $this->akceModel_var;
     }
 
+    public function getKontaktyModel() {
+        if(!isset($this->kontaktyModel_var))
+            $this->kontaktyModel_var = new KontaktyModel();
+
+        return $this->kontaktyModel_var;
+    }
+    
+   public function getAutomatyModel() {
+        if(!isset($this->automatyModel_var))
+            $this->automatyModel_var = new AutomatyModel();
+
+        return $this->automatyModel_var;
+    }
 }

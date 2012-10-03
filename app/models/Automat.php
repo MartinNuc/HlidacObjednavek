@@ -26,6 +26,7 @@ class Automat extends DibiRow
      */
     public function doSkladu()
     {
+        dibi::query("INSERT INTO [presuny_automatu] ", array('id_automat' => $this->id_automat, 'id_zakaznik' => 0, 'datum' => $date));
         return dibi::query('UPDATE [automaty] SET id_oblast=0, id_zakaznik=0, adresa="", umisteni="" WHERE [id_automat]=%i', $this->id_automat); 
         //return dibi::query('DELETE FROM oblasti WHERE [id_oblast]=%i', $this->id_oblast);
     }
@@ -68,6 +69,14 @@ class Automat extends DibiRow
      */
     public function save()
     {
+        $tmp = new Automat();
+        $tmp->id_automat = $this->id_automat;
+        $tmp->fetch();
+        if ($tmp->id_zakaznik != $this->id_zakaznik)
+        {
+            $date = date('Y-m-d');
+            dibi::query("INSERT INTO [presuny_automatu] ", array('id_automat' => $this->id_automat, 'id_zakaznik' => $this->id_zakaznik, 'datum' => $date));
+        }
         return dibi::query('UPDATE [automaty] SET', (array) $this, 'WHERE [id_automat]=%i', $this->id_automat); 
     }
     

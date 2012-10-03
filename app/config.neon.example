@@ -24,12 +24,20 @@ common:
 
                 authenticator: 
                     factory: [@model, createAuthenticatorService]
+                polozkyOpravy:
+                    class: PolozkyOpravy
+                    arguments: [@session]
+                sessionPanel:
+                    class: SessionPanel
+                    arguments:
+                        - @application
+                        - @session  
 
-services:
-        polozkyOpravy:
-                class: PolozkyOpravy
-                arguments: [@session]
-
+        nette:
+            debugger:
+                strictMode: true
+                bar:
+                    - @sessionPanel
 production < common:
     database:
         driver: mysql

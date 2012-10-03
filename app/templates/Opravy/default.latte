@@ -3,14 +3,14 @@
 {/block}
 
 {block content}
-<h1>{block #title}Nová oprava{/block}</h1>
 {snippet oprava}
-<a class="ajax" href="{plink Clean!}"><button>Promazat</button></a>
-<div class="opravy">
+<div id="oprava">
+    <h1>{block #title}Nová oprava{/block}</h1>
+    <a class="ajax" href="{plink Clean!}"><button>Promazat</button></a>
     {foreach $skupiny as $item}
         <h2>{$item->nazev}</h2>
 
-        <table class="table opravy">
+        <table class="novaOprava">
             <thead>
                 <tr>
                     <th>Počet</th>
@@ -111,11 +111,11 @@
 </div>
 {/snippet}
 
-<h1>Historie oprav</h1>
 {snippet historie}
+<h2>Historie oprav</h2>
 {control filtrOpravy}
-<div id="historie_objednavek">
-    <table class="objednavky_historie">
+<div id="historie_oprav">
+    <table class="opravy_historie">
         <thead>
             <tr>
                 <th>&nbsp;</th>

@@ -1,9 +1,9 @@
 {block navigace}
-<a href="{plink Hlidac:default}">Hlídač objednávek</a> / {include #title}
+<a href="{plink Hlidac:default}">Hlídač objednávek</a> / {if $id_automat != null}<a href="{plink Opravy:seznam, $id_automat}">Seznam oprav automatu</a> /{/if} {include #title}
 {/block}
 
 {block content}
-<h1>{block #title}Detail opravy{/block}</h1>
+<h1>{block #title}Detail opravy automatu {if $id_automat != null}{$automat->nazev} (BMB: {$automat->bmb}){/if}{/block}</h1>
 {snippet stranky}
 {control vp}
 <table class="table opravy">

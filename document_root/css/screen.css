@@ -38,6 +38,22 @@ table.opravy
     width: 820px;
 }
 
+table.novaOprava
+{
+    width: 500px;
+}
+
+div#oprava h2 {clear: both;}
+
+#oprava 
+{
+    border: 10px solid #3399FF;
+    width: 59%;
+    float: right; 
+    padding: 20px 0 0 10px; 
+    text-align: justify;
+}
+
 .button, button {
 		display: inline-block;
 		zoom: 1; /* zoom and *display = ie7 hack for display:inline-block */
@@ -115,6 +131,13 @@ table.dph {width: 85%; max-width: 200px}
 table.uzivatele {width: 85%; max-width: 450px}
 table.hlidac {width: 800px}
 
+table.opravy_historie
+{
+    min-width: 100%;
+}
+table.opravy_historie td:first-child {width: 100px;}
+table.opravy {max-width: 1000px; width: 95%;}
+
 table.objednavky_historie
 {
     min-width: 100%;
@@ -142,6 +165,7 @@ table.hledani_zakazniku {width: 85%; max-width: 750px}
 .kategorie td + td a {float: right}
 .uzivatele td + td + td a {float: right}
 .objednavky td + td +td + td +td + td +td a {float: right;}
+table.opravy td + td a {float: right;}
 
 table {
     background: none repeat scroll 0 0 #D3E4E5;
@@ -378,6 +402,20 @@ label.yellow {background-color: yellow}
 .obj_group 
 {
     float:left;
+}
+
+#snippet--historie
+{ clear: both;}
+
+#historie_oprav
+{
+    clear: left;
+    margin:20px;
+    height:450px;
+    border: 2px solid black;
+    white-space: nowrap;
+    clip : auto;
+    overflow: auto;
 }
 #historie_objednavek
 {

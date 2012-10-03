@@ -3,7 +3,9 @@
 {/block}
 
 {block content}
-<a href="{plink opravy:default, $id_automat}">Zadat novou opravu</a>
+<p><br><img alt="Přiřadit" src="{$basePath}/images/plus.png">
+<b><a href="{plink opravy:default, $id_automat}">Zadat novou opravu</a></b>
+</p>
 <h1>{block #title}Seznam oprav automatu {$automat->nazev} (BMB: {$automat->bmb}){/block}</h1>
 {snippet stranky}
 {control vp}

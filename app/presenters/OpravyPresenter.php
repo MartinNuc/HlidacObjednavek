@@ -188,6 +188,8 @@ class OpravyPresenter extends BasePresenter {
             $oprava = new Oprava();
             $oprava->id_automat = $this->id_automat;
             $oprava->datum = $form['datum']->getValue();  // datum objednavky
+            if ($oprava->datum == null)
+                $oprava->datum = date('Y-m-d');
             $oprava->id=$this->opravyModel->addOprava($oprava);
 
             foreach ($polozky as $polozka)
@@ -273,6 +275,11 @@ class OpravyPresenter extends BasePresenter {
         $paginator->itemsPerPage = 20;
         $paginator->itemCount = count($this->akceModel->getAkce(array("datum" => "DESC"), array("id_oprava" => $id_oprava), $paginator->offset, $paginator->itemsPerPage));
         $this->template->items = $this->akceModel->getAkce(array("datum" => "DESC"), array("id_oprava" => $id_oprava), $paginator->offset, $paginator->itemsPerPage);
+        $this->template->id_automat = $this->id_automat;
+        
+        $automat = $this -> automatyModel -> getAutomaty(NULL, array(
+                'id_automat' => $this->id_automat))->fetch();
+        $this->template->automat = $automat;
     }
     
     public function renderDefault($id_automat) {
@@ -358,6 +365,10 @@ class OpravyPresenter extends BasePresenter {
         $automat = new Automat();
         $automat->id_automat = $id_automat;
         $automat->fetch();
+        $this->template->automat = $automat;
+
+        $automat = $this -> automatyModel -> getAutomaty(NULL, array(
+                'id_automat' => $this->id_automat))->fetch();
         $this->template->automat = $automat;
     }
     

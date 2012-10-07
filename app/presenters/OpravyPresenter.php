@@ -350,12 +350,12 @@ class OpravyPresenter extends BasePresenter {
             foreach ($skupiny as $skupina)
             {
                 $akce = $this->akceModel->getAkce(NULL, array("id_skupina" => $skupina->id_skupina, "id_oprava" => $oprava->id_oprava));
-                $output .= '<div class="skupina">' . $skupina->nazev;
+                $output .= '<div class="hist_skupina"><div class="hist_skupina_nazev">' . $skupina->nazev . '</div>';
                 foreach ($akce as $a)
                 {
-                    $output .= '<div class="akce">';
-                    $output .= '<div class="pocet">' . $a->pocet . "</div>";
-                    $output .= '<div class="popis">' . $a->popis . "</div>";
+                    $output .= '<div class="hist_akce">';
+                    $output .= '<div class="hist_pocet">' . $a->pocet . "</div>";
+                    $output .= '<div class="hist_popis">' . $a->popis . "</div>";
                     $output .= "</div>";
                 }
                 $output .= "</div>";
@@ -367,12 +367,12 @@ class OpravyPresenter extends BasePresenter {
             foreach ($skupiny as $skupina)
             {
                 $akce = $this->akceModel->getAkce(NULL, array("id_skupina" => $skupina->id_skupina, "id_oprava" => $oprava->id_oprava));
-                $output .= '<div class="skupina">' . $skupina->nazev;
+                $output .= '<div class="hist_skupina"><div class="hist_skupina_nazev">' . $skupina->nazev . "</div>";
                 foreach ($akce as $a)
                 {
-                    $output .= '<div class="akce">';
-                    $output .= '<div class="pocet">' . $a->pocet . "</div>";
-                    $output .= '<div class="popis">' . $a->popis . "</div>";
+                    $output .= '<div class="hist_akce">';
+                    $output .= '<div class="hist_pocet">' . $a->pocet . "</div>";
+                    $output .= '<div class="hist_popis">' . $a->popis . "</div>";
                     $output .= "</div>";
                 }
                 $output .= "</div>";

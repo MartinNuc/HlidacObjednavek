@@ -445,6 +445,11 @@ label.yellow {background-color: yellow}
 .obj_info_automat {float: left}
 .objednavka_kontakty {clear: left;}
 
+.hist_akce {border: 1px solid; display: inline-block; margin:2px; padding: 2px;}
+.hist_skupina{ clear: right; border: 3px solid; margin: 5px; display: inline-block;}
+.hist_skupina_nazev {text-align: center}
+.hist_popis {text-align: center}
+
 .obj_zbozi {width: 2em}
 #automat_zakaznik { width: 36%; float: left; padding: 10px}
 

@@ -124,13 +124,13 @@
             </tr>
         </thead>
         <tbody>
-            {if count($items) == 0}
+            {if count($historie) == 0}
                 <tr class="licha"><td colspan="8">Žádná data</td></tr>
             {/if}
 
             {assign $i => 0}
             {assign $cena_celkem => 0}
-            {foreach $items as $item}	
+            {foreach $historie as $item}	
                     {if $i % 2 }
                          <tr class="slight_border licha">
                     {else}
@@ -138,7 +138,8 @@
                     {/if}
 
                     <td>
-                        <a href="{plink detail, $item->id_oprava}">Detail</a>
+                        <!--<a href="{plink detail, $item->id_oprava}">Detail</a>-->
+                        {!$detail[$item->id_oprava]}
                     </td><td>
                         {$item->formatovane_datum}
                     </td><td>

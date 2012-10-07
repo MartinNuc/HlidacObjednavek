@@ -24,10 +24,20 @@ class AkceModel {
                         '%if', isset($limit), 'LIMIT %i %end', $limit,
                         '%if', isset($offset), 'OFFSET %i %end', $offset
                     )->setRowClass('Akce');
-             Debugger::log(dibi::$sql);
              return $res;
         }
-                
+               
+        public function getDeletedSkupinyOfAkce($order = NULL, $id_oprava, $offset = NULL, $limit = NULL)
+        {
+             $res = dibi::query(
+                        'SELECT DISTINCT skupiny.* FROM [akce] LEFT JOIN [skupiny] USING (id_skupina) WHERE hidden=1 and id_oprava=', $id_oprava, 
+                        '%if', isset($order), 'ORDER BY %by', $order, '%end',
+                        '%if', isset($limit), 'LIMIT %i %end', $limit,
+                        '%if', isset($offset), 'OFFSET %i %end', $offset
+                    )->setRowClass('Skupina');
+             return $res;
+        }
+        
         /**
          * Adds new DPH value
          * @param Dph new DPH

@@ -25,6 +25,17 @@ class SkupinyModel
                     )->setRowClass('Skupina');
         }
         
+        public function getSkupinyWithHidden($order = NULL, $where = NULL, $offset = NULL, $limit = NULL)
+        {
+             return dibi::query(
+                        'SELECT skupiny.* FROM [skupiny] WHERE 
+                         %if', isset($where), '%and', isset($where) ? $where : array(), '%end',
+                        '%if', isset($order), 'ORDER BY %by', $order, '%end',
+                        '%if', isset($limit), 'LIMIT %i %end', $limit,
+                        '%if', isset($offset), 'OFFSET %i %end', $offset
+                    )->setRowClass('Skupina');
+        }
+        
         /**
          * Adds new entity
          * @param Oblast new Oblast

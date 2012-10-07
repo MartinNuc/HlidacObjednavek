@@ -334,10 +334,52 @@ class OpravyPresenter extends BasePresenter {
         $paginator->itemCount = count($this->opravyModel->getOpravy(array("datum" => "DESC"), 
                 array("id_automat" => $id_automat, array("datum <= %d", $this->filtr_do), array("datum >= %d", $this->filtr_od)),
                 $paginator->offset, $paginator->itemsPerPage));
-        $this->template->items = $this->opravyModel->getOpravy(array("datum" => "DESC"),
+        //$this->template->items = $this->opravyModel->getOpravy(array("datum" => "DESC"),
+        //        array("id_automat" => $id_automat, array("datum <= %d", $this->filtr_do), array("datum >= %d", $this->filtr_od)),
+        //        $paginator->offset, $paginator->itemsPerPage);
+        $this->template->historie = $this->opravyModel->getOpravy(array("datum" => "DESC"),
                 array("id_automat" => $id_automat, array("datum <= %d", $this->filtr_do), array("datum >= %d", $this->filtr_od)),
                 $paginator->offset, $paginator->itemsPerPage);
         
+        $this->template->detail=array();
+        foreach ($this->template->historie as $oprava)
+        {
+            // skupiny, ktere nejsou smazane
+            $skupiny = $this->model->getSkupiny();
+            $output = "";
+            foreach ($skupiny as $skupina)
+            {
+                $akce = $this->akceModel->getAkce(NULL, array("id_skupina" => $skupina->id_skupina, "id_oprava" => $oprava->id_oprava));
+                $output .= '<div class="skupina">' . $skupina->nazev;
+                foreach ($akce as $a)
+                {
+                    $output .= '<div class="akce">';
+                    $output .= '<div class="pocet">' . $a->pocet . "</div>";
+                    $output .= '<div class="popis">' . $a->popis . "</div>";
+                    $output .= "</div>";
+                }
+                $output .= "</div>";
+            }
+
+            // pokud ma nejake smazane skupiny, tak vypisem
+            $skupiny = $this->akceModel->getDeletedSkupinyOfAkce(NULL, $oprava->id_oprava, NULL, NULL);
+
+            foreach ($skupiny as $skupina)
+            {
+                $akce = $this->akceModel->getAkce(NULL, array("id_skupina" => $skupina->id_skupina, "id_oprava" => $oprava->id_oprava));
+                $output .= '<div class="skupina">' . $skupina->nazev;
+                foreach ($akce as $a)
+                {
+                    $output .= '<div class="akce">';
+                    $output .= '<div class="pocet">' . $a->pocet . "</div>";
+                    $output .= '<div class="popis">' . $a->popis . "</div>";
+                    $output .= "</div>";
+                }
+                $output .= "</div>";
+            }
+
+            $this->template->detail[$oprava->id_oprava] = $output;
+        }
     } 
 
     public function actionEdit() {

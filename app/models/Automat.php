@@ -26,6 +26,7 @@ class Automat extends DibiRow
      */
     public function doSkladu()
     {
+        $date = date("Y-m-d");
         dibi::query("INSERT INTO [presuny_automatu] ", array('id_automat' => $this->id_automat, 'id_zakaznik' => 0, 'datum' => $date));
         return dibi::query('UPDATE [automaty] SET id_oblast=0, id_zakaznik=0, adresa="", umisteni="" WHERE [id_automat]=%i', $this->id_automat); 
         //return dibi::query('DELETE FROM oblasti WHERE [id_oblast]=%i', $this->id_oblast);

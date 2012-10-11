@@ -16,12 +16,13 @@
             <th>Telefon</th>
             <th>email</th>
             <th>Osobní zákazník</th>
-            <th>Do</th>
+            <th>Od</th>
+            <th>&nbsp;</th>
         </tr>
     </thead>
     <tbody>
         {if count($items) == 0}
-            <tr class="licha"><td colspan="7">Žádná data</td></tr>
+            <tr class="licha"><td colspan="8">Žádná data</td></tr>
         {/if}
 	{assign $i => 0}
 	{foreach $items as $item}
@@ -61,6 +62,8 @@
             <td>
                 {$item->formatovane_datum}
             {assign $i => $i+1}
+            </td><td>
+            <a class="ajax delete" href="{plink DeletePresun!, $item->id_presun}"><img alt="Smazat" src="{$basePath}/images/delete.png"></a>
             </td>
             </tr>
 	{/foreach}

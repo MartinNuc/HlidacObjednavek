@@ -106,6 +106,26 @@ class AutomatyPresenter extends BasePresenter {
         }
     }
     
+    public function handleDeletePresun($id)
+    {
+        $automat = new Presun();
+        $automat->id_presun = urldecode($id);
+        try
+        {
+            $automat->delete();
+        }
+        catch (DibiDriverException $e)
+        {
+            $this->flashMessage('Při zpracování nastala chyba. Presun není možné vymazat.','error');
+        }
+        
+        if (!$this->isAjax())
+            $this->redirect('this');
+        else {
+            $this->invalidateControl('stranky');
+        }
+    }
+    
     /**
      * Edit form
      * @param type $name edit form

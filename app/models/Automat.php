@@ -104,6 +104,7 @@ class Automat extends DibiRow
         $this->umisteni = $res->umisteni;
         $this->vyrobni_cislo = $res->vyrobni_cislo;
         $this->layout = $res->layout;
+        $this->osobni = $res->osobni;
         
         // zakaznik
         $this->id_zakaznik = $res->id_zakaznik;

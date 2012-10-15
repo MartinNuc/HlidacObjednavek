@@ -47,7 +47,9 @@ class AutomatyPresenter extends BasePresenter {
         $form->addSelect('oblast', 'Oblast:', $pole);
         
         $pole = $this->zakazniciModel->getZakazniky("nazev")->fetchPairs('id_zakaznik','nazev');
-        $form->addSelect('zakaznik', 'Přidat rovnou pod zákazníka:', $pole);
+        $form->addSelect('zakaznik', 'Přidat rovnou pod zákazníka:', $pole)->setDefaultValue("0");
+        
+        $form->addCheckbox('osobni_automat', 'Osobní automat');
         
         $form->addSubmit('novyAutomat', 'Přidat');
         $form->onSuccess[] = array($this, 'novyAutomat_submit');
@@ -70,6 +72,7 @@ class AutomatyPresenter extends BasePresenter {
         
         $automat->id_zakaznik = $form['zakaznik']->getValue();
         $automat->id_oblast = $form['oblast']->getValue();
+        $automat->osobni = $form['osobni_automat']->getValue();
         $this->model->addAutomat($automat);
 
         $form->setValues(array(), TRUE);
@@ -148,6 +151,7 @@ class AutomatyPresenter extends BasePresenter {
         
         $pole = $this->zakazniciModel->getZakazniky("nazev")->fetchPairs('id_zakaznik','nazev');
         $form->addSelect('zakaznik', 'U zákazníka:', $pole);
+        $form->addCheckbox('osobni_automat', 'Osobní automat');
         
         $form->addHidden('id');
         $form->addSubmit('editAutomat', 'Uložit');
@@ -205,6 +209,7 @@ class AutomatyPresenter extends BasePresenter {
         $automat->adresa = $form['adresa']->getValue();
         $automat->id_zakaznik = $form['zakaznik']->getValue();
         $automat->id_oblast = $form['oblast']->getValue();
+        $automat->osobni = $form['osobni_automat']->getValue();
         
         $automat->save();
                 
@@ -360,7 +365,7 @@ class AutomatyPresenter extends BasePresenter {
         $paginator->itemCount = count($this -> model -> getAutomaty(NULL, NULL, NULL, NULL, $this->filtr_automaty));
         $items = $this -> model -> getAutomaty(array("id_oblast" => "DSC", "zakaznik_nazev" => "ASC"), NULL,
                 $paginator->offset, $paginator->itemsPerPage, $this->filtr_automaty);
-        
+                
         $this->template->items = $items;
         if ($this->isAjax())
             $this->invalidateControl('stranky');
@@ -424,6 +429,7 @@ class AutomatyPresenter extends BasePresenter {
             $this["upravitAutomat"]["umisteni"]->setValue($automat->umisteni);
             $this["upravitAutomat"]["zakaznik"]->setValue($automat->id_zakaznik);
             $this["upravitAutomat"]["oblast"]->setValue($automat->id_oblast);
+            $this["upravitAutomat"]["osobni_automat"]->setValue($automat->osobni);
             
             // kontakty
             $this->template->kontakty = $this->kontaktyModel->getKontaktyInContext(array("jmeno" => "ASC"), array('id_automat' => $id));

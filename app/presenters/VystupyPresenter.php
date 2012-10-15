@@ -123,7 +123,12 @@ class VystupyPresenter extends BasePresenter {
         $kategorie = $this->kategorieModel->getKategorie(NULL, NULL, NULL, NULL, $filtr_kategorii);
         foreach ($kategorie as $kat)
         {
-            $zbozi[$kat->id_kategorie] = $this->zboziModel->getZbozi(array("zkratka" => "ASC"), array("id_kategorie" => $kat->id_kategorie));
+            if ($this->getUser()->isInRole('host'))
+                $where = array("id_kategorie" => $kat->id_kategorie, "nestle" => 1);
+            else
+                $where = array("id_kategorie" => $kat->id_kategorie);
+                
+            $zbozi[$kat->id_kategorie] = $this->zboziModel->getZbozi(array("zkratka" => "ASC"), $where);
             $soucty_nc[$kat->id_kategorie] = 0;
             $soucty_pc[$kat->id_kategorie] = 0;
             foreach ($zbozi[$kat->id_kategorie] as $zb)
@@ -169,6 +174,32 @@ class VystupyPresenter extends BasePresenter {
         $form->addGroup("")->setOption('container', Html::el('div')->class('tisk_parametry'));
         $form->addCheckbox('osobni', "Osobní zákaznící")->setDefaultValue(true);
         $form->addCheckbox('nestle', "Nestlé zákaznící")->setDefaultValue(true);
+        $form->addGroup("")->setOption('container', Html::el('div')->class('tisk_tlacitka'));
+        $form->addSubmit('filtrAutomaty', 'Nastavit kritéria');
+        $form->addButton('print', 'Tisk')->getControlPrototype()->class("print");
+        $form->onSuccess[] = callback($this, 'filtrAutomaty_submit');
+        return $form;
+    }
+    
+    public function createComponentFiltrAutomatyHost($name)
+    {
+        $form = new Form($this, $name);
+        $form->getElementPrototype()->class('ajax');
+        /*$renderer = $form->getRenderer();
+        $renderer->wrappers['controls']['container'] = NULL;
+        $renderer->wrappers['label']['container'] = NULL;
+        $renderer->wrappers['control']['container'] = NULL;
+        $renderer->wrappers['pair']['container'] = \Nette\Utils\Html::el('div');*/
+
+        $form->addGroup("")->setOption('container', Html::el('div')->class('tisk_oblasti'));
+        $oblasti = $this->oblastiModel->getOblasti();
+        foreach ($oblasti as $oblast)
+            if ($oblast->id_oblast != 0)
+                $form->addCheckbox('oblast_' . $oblast->id_oblast, $oblast->nazev)->setDefaultValue(false);
+
+        $form->addGroup("")->setOption('container', Html::el('div')->class('tisk_parametry'));
+        $form->addHidden('osobni', 0)->setDefaultValue(false);
+        $form->addHidden('nestle', 0)->setDefaultValue(false);
         $form->addGroup("")->setOption('container', Html::el('div')->class('tisk_tlacitka'));
         $form->addSubmit('filtrAutomaty', 'Nastavit kritéria');
         $form->addButton('print', 'Tisk')->getControlPrototype()->class("print");
@@ -242,6 +273,10 @@ class VystupyPresenter extends BasePresenter {
                 $where = NULL;
                 break;
         }
+        
+        if ($this->getUser()->isInRole('host'))
+            $where = array('osobni_zakaznik' => 0);
+        
         $this->template->kontakt_jmeno = $this->automatyModel->getFirstKontakt (NULL)->fetchPairs("id_automat", "jmeno");
         $this->template->kontakt_email = $this->automatyModel->getFirstKontakt (NULL)->fetchPairs("id_automat", "email");
         $this->template->kava = $this->zboziModel->getZboziPodleSmlouvy (NULL)->fetchPairs("id_zakaznik", "zkratka");
@@ -286,6 +321,52 @@ class VystupyPresenter extends BasePresenter {
         $form->addGroup("")->setOption('container', Html::el('div')->class('tisk_parametry'));
         $form->addCheckbox('osobni', "Osobní zákaznící")->setDefaultValue(true);
         $form->addCheckbox('nestle', "Nestlé zákaznící")->setDefaultValue(true);
+        
+        $form->addGroup("")->setOption('container', Html::el('div')->class('tisk_parametry'));
+        $form->addCheckbox('objednavali', "Objednávající zákaznící")->setDefaultValue(true);
+        $form->addCheckbox('neobjednavali', "Neobjednávající zákaznící")->setDefaultValue(false);
+        
+        $form->addGroup("Volitelné");
+        $form->addCheckbox('skryt_automaty', "Skrýt automaty")->setDefaultValue(true);
+        $form->addGroup("")->setOption('container', Html::el('div')->class('tisk_tlacitka'));
+        $form->addSubmit('filtrZakaznici', 'Nastavit kritéria');
+        $form->addButton('print', 'Tisk')->getControlPrototype()->class("print");
+        $form->onSuccess[] = callback($this, 'filtrZakazniky_submit');
+        return $form;
+    }
+    
+    public function createComponentFiltrZakazniciHost($name)
+    {
+        $form = new Form($this, $name);
+        $form->getElementPrototype()->class('ajax');
+        /*$renderer = $form->getRenderer();
+        $renderer->wrappers['controls']['container'] = NULL;
+        $renderer->wrappers['label']['container'] = NULL;
+        $renderer->wrappers['control']['container'] = NULL;
+        $renderer->wrappers['pair']['container'] = \Nette\Utils\Html::el('div');*/
+
+        $form->addGroup("")->setOption('container', Html::el('div')->class('tisk_kategorie'));
+        $kategorie = $this->kategorieModel->getKategorie();
+        foreach ($kategorie as $kat)
+            $form->addCheckbox('kategorie_' . $kat->id_kategorie, $kat->nazev)->setDefaultValue(false);
+
+        $form->addGroup("")->setOption('container', Html::el('div')->class('tisk_oblasti'));
+        $oblasti = $this->oblastiModel->getOblasti();
+        foreach ($oblasti as $oblast)
+            if ($oblast->id_oblast != 0)
+                $form->addCheckbox('oblast_' . $oblast->id_oblast, $oblast->nazev)->setDefaultValue(false);
+
+        $form->addGroup("")->setOption('container', Html::el('div')->class('tisk_datum'));
+        $form->addDatePicker('od', "Od")
+            ->addRule(Form::VALID, 'Zadané datum není platné.')->setDefaultValue(Date('d. m. Y',mktime(0,0,0,date('m')-1,date('d'),date('y'))));
+        $this->filtr_od = Date('j-n-Y',mktime(0,0,0,date('m')-1,date('d'),date('y')));
+        $form->addDatePicker('doo', "Do")
+            ->addRule(Form::VALID, 'Zadané datum není platné.')->setDefaultValue(Date('d. m. Y'));
+        $this->filtr_do = Date('j-n-Y');
+        
+        $form->addGroup("")->setOption('container', Html::el('div')->class('tisk_parametry'));
+        $form->addHidden('osobni', "0")->setDefaultValue(false);
+        $form->addHidden('nestle', "0")->setDefaultValue(false);
         
         $form->addGroup("")->setOption('container', Html::el('div')->class('tisk_parametry'));
         $form->addCheckbox('objednavali', "Objednávající zákaznící")->setDefaultValue(true);
@@ -437,8 +518,17 @@ class VystupyPresenter extends BasePresenter {
         else
             $filtr_oblasti = "id_oblast=-1";
 
+        if ($this->getUser()->isInRole('host'))
+        {
+            $where = array("automaty.osobni" => 0, "zakaznici.osobni_zakaznik" => 0);
+        }
+        else
+        {
+            $where = null;    
+        }
+        
         $objednavky = array();
-        $objednavky = $this->objednavkyModel->getObjednavkyTrasy(array("id_kategorie" => "ASC","zkratka" => "ASC"), NULL, NULL, NULL, $this->filtr_od, $this->filtr_do, $filtr_oblasti);
+        $objednavky = $this->objednavkyModel->getObjednavkyTrasy(array("id_kategorie" => "ASC","zkratka" => "ASC"), $where, NULL, NULL, $this->filtr_od, $this->filtr_do, $filtr_oblasti);
         
         $zbozi = array();
         $zbozi = $this->zboziModel->getZbozi();
@@ -526,6 +616,9 @@ class VystupyPresenter extends BasePresenter {
                 $where = NULL;
                 break;
         }
+        
+        if ($this->getUser()->isInRole('host'))
+            $where = array('osobni_zakaznik' => 0);
         
         // zde se hledaji zakaznici, kteri kupuji nebo i ti co nekupuji nebo jen ti co kupuji?
         $zakaznici=array(); 

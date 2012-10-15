@@ -42,6 +42,10 @@ class TiskObjednavekPresenter extends BasePresenter {
         if (!$this->getUser()->isLoggedIn())
             $this->redirect('sign:in');
         
+        if ($this->getUser()->isInRole('host'))
+            $this->redirect('sign:in');
+
+        
         $objednavka = new Objednavka();
         $objednavka->id_objednavka = $id_objednavka;
         $objednavka->fetch();
@@ -132,6 +136,10 @@ class TiskObjednavekPresenter extends BasePresenter {
         if (!$this->getUser()->isLoggedIn())
             $this->redirect('sign:in');
         
+        if ($this->getUser()->isInRole('host'))
+            $this->redirect('sign:in');
+
+        
         $objednavky = $this->model->getObjednavkyTisk();
         $this->template->objednavky = $objednavky;
         
@@ -165,6 +173,10 @@ class TiskObjednavekPresenter extends BasePresenter {
         if (!$this->getUser()->isLoggedIn())
             $this->redirect('sign:in');
         
+        if ($this->getUser()->isInRole('host'))
+            $this->redirect('sign:in');
+
+        
         if (count($this->list_objednavek) == 0)
         {
             $this->flashMessage ("Vybrané objednávky byly vytištěny.");
@@ -190,6 +202,9 @@ class TiskObjednavekPresenter extends BasePresenter {
     
     public function renderTisknajednou() {
         if (!$this->getUser()->isLoggedIn())
+            $this->redirect('sign:in');
+        
+        if ($this->getUser()->isInRole('host'))
             $this->redirect('sign:in');
         
         if (count($this->list_objednavek) == 0)

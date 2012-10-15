@@ -428,6 +428,9 @@ class ObjednavkyPresenter extends BasePresenter {
         foreach ($zakaznici as $zakaznik)
         {
             $this->template->zakaznik = $zakaznik;
+            if ($zakaznik->osobni_zakaznik==1 && $this->getUser()->isInRole('host'))
+                $this->redirect('Hlidac:default');
+
             break;
         }
         

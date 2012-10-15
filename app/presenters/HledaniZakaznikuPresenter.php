@@ -86,16 +86,22 @@ class HledaniZakaznikuPresenter extends BasePresenter {
         $vp = new VisualPaginator($this, 'vp');
         $paginator = $vp->getPaginator();
         $paginator->itemsPerPage = 20;
-        $paginator->itemCount = count($this -> model -> getZakaznikyHledani(NULL,
-                array("automaty.bmb" => $this->filtr_bmb, "automaty.umisteni" => $this->filtr_umisteni, 
-                    "automaty.vyrobni_cislo" => $this->filtr_vyrobni_cislo, "oblasti.nazev" => $this->filtr_oblast, 
-                    "zakaznici.nazev" => $this->filtr_nazev_zakaznika ),
-                NULL, NULL));
-        $items = $this -> model -> getZakaznikyHledani(array('nazev' => 'ASC'),
-                array("automaty.bmb" => $this->filtr_bmb, "automaty.umisteni" => $this->filtr_umisteni, 
-                    "automaty.vyrobni_cislo" => $this->filtr_vyrobni_cislo, "oblasti.nazev" => $this->filtr_oblast, 
-                    "zakaznici.nazev" => $this->filtr_nazev_zakaznika),
-                     $paginator->offset, $paginator->itemsPerPage);
+        
+        if ($this->getUser()->isInRole('host'))
+        {
+            $where = array("automaty.bmb" => $this->filtr_bmb, "automaty.umisteni" => $this->filtr_umisteni, 
+                        "automaty.vyrobni_cislo" => $this->filtr_vyrobni_cislo, "oblasti.nazev" => $this->filtr_oblast, 
+                        "zakaznici.nazev" => $this->filtr_nazev_zakaznika, "zakaznici.osobni_zakaznik" => 0, "automaty.osobni" => 0 );
+        }
+        else
+        {
+            $where = array("automaty.bmb" => $this->filtr_bmb, "automaty.umisteni" => $this->filtr_umisteni, 
+                        "automaty.vyrobni_cislo" => $this->filtr_vyrobni_cislo, "oblasti.nazev" => $this->filtr_oblast, 
+                        "zakaznici.nazev" => $this->filtr_nazev_zakaznika);
+        }
+
+        $paginator->itemCount = count($this -> model -> getZakaznikyHledani(NULL, $where ,NULL, NULL));
+        $items = $this -> model -> getZakaznikyHledani(array('nazev' => 'ASC'),$where,$paginator->offset, $paginator->itemsPerPage);
 
         
         $this->template->items = $items;

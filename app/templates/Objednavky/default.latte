@@ -159,22 +159,24 @@
         $('input#frmnovaObjednavka-id_automat').val($value);
     });
 </script>
-{snippet nova_objednavka}
-<div id="nova_objednavka">
-    <h1>{block #title}Nová objednávka{/block}</h1>
-    {control novaObjednavka}
-    {snippet cena}
-    <p>
-        Celkova cena bez DPH: {$cena_bez_dph |number:2:',':' '} Kč<br/>
-        Celkova cena s DPH: {$cena_s_dph |number:2:',':' '} Kč<br/>
-        Body: {$body}<br/>
-        {if $user->isInRole('admin')}
-            Zisk: {$zisk |number:2:',':' '} Kč
-        {/if}
-    </p>
+{if !$user->isInRole('host')}
+    {snippet nova_objednavka}
+    <div id="nova_objednavka">
+        <h1>{block #title}Nová objednávka{/block}</h1>
+        {control novaObjednavka}
+        {snippet cena}
+        <p>
+            Celkova cena bez DPH: {$cena_bez_dph |number:2:',':' '} Kč<br/>
+            Celkova cena s DPH: {$cena_s_dph |number:2:',':' '} Kč<br/>
+            Body: {$body}<br/>
+            {if $user->isInRole('admin')}
+                Zisk: {$zisk |number:2:',':' '} Kč
+            {/if}
+        </p>
+        {/snippet}
+    </div>
     {/snippet}
-</div>
-{/snippet}
+{/if}
 <div id="historie_obj">
     <hr>
     <h2>Historie objednávek</h2>

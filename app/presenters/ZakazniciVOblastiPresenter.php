@@ -71,9 +71,19 @@ class ZakazniciVOblastiPresenter extends BasePresenter {
         $this->template->id_oblast = $id_oblast;
         $paginator = $vp->getPaginator();
         $paginator->itemsPerPage = 20;
-        $paginator->itemCount = count($this -> model -> getZakaznikyVOblasti($id_oblast, NULL, NULL, NULL, $this->filtr_zakaz_oblast ));
+        
+        if ($this->getUser()->isInRole('host'))
+        {
+            $where = array("zakaznici.osobni_zakaznik" => 0, "automaty.osobni" => 0 );
+        }
+        else
+        {
+            $where = null;
+        }
+        
+        $paginator->itemCount = count($this -> model -> getZakaznikyVOblasti($id_oblast, NULL, NULL, NULL, $this->filtr_zakaz_oblast, $where));
         $items = $this -> model -> getZakaznikyVOblasti($id_oblast, $order = array(
-                'nazev' => 'ASC'), $paginator->offset, $paginator->itemsPerPage, $this->filtr_zakaz_oblast);
+                'nazev' => 'ASC'), $paginator->offset, $paginator->itemsPerPage, $this->filtr_zakaz_oblast, $where);
         
         $this->template->items = $items;
         if ($this->isAjax())

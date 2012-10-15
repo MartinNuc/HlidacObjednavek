@@ -8,7 +8,11 @@
 <p class="noPrint">Vyberte z každé skupiny alespoň jednu volbu.</p>
 
 {snippet formAutomaty}
-    {control filtrAutomaty}
+    {if $user->isInRole('host')}
+        {control filtrAutomatyHost}
+    {else}
+        {control filtrAutomaty} 
+    {/if}
 {/snippet}
 
 {snippet stranky}

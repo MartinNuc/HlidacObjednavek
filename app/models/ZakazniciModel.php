@@ -59,15 +59,17 @@ class ZakazniciModel
          * @param string $filtrLike filter to filter result by name using LIKE operator
          * @return DibiResult result
          */
-        public function getZakaznikyVOblasti($id_oblast, $order = NULL, $offset = NULL, $limit = NULL, $filtrLike = NULL)
+        public function getZakaznikyVOblasti($id_oblast, $order = NULL, $offset = NULL, $limit = NULL, $filtrLike = NULL, $where = NULL)
         {
-             return dibi::query(
+             $ret = dibi::query(
                         'SELECT DISTINCT zakaznici.* FROM [zakaznici] LEFT JOIN [automaty] USING (id_zakaznik) WHERE hidden=0 AND id_oblast=', $id_oblast,
                         '%if', isset($filtrLike) && $filtrLike!="", ' AND zakaznici.nazev LIKE %s', isset($filtrLike) ? "%" .$filtrLike."%" : '', '%end',
+                        '%if', isset($where), 'AND %and', isset($where) ? $where : array(), '%end',
                         '%if', isset($order), 'ORDER BY %by', $order, '%end',
                         '%if', isset($limit), 'LIMIT %i %end', $limit,
                         '%if', isset($offset), 'OFFSET %i %end', $offset      
                     )->setRowClass('Zakaznik');
+             return $ret;
         }
         
         /**
@@ -78,7 +80,7 @@ class ZakazniciModel
          * @param int $limit used for paging
          * @return DibiResult result
          */
-        public function getZakaznikyHledani($order = NULL, $where = NULL, $offset = NULL, $limit = NULL)
+        public function getZakaznikyHledani($order = NULL, $where = NULL, $offset = NULL, $limit = NULL, $classicWhere = NULL)
         {
             try {
                 // prevod parametru WHERE do formy LIKE
@@ -92,6 +94,7 @@ class ZakazniciModel
                             'SELECT DISTINCT zakaznici.* FROM [zakaznici] LEFT JOIN [automaty] USING (id_zakaznik) LEFT JOIN [oblasti] USING (id_oblast)
                                 WHERE zakaznici.hidden=0 ',
                             '%if', isset($and), 'AND %and', isset($and) ? $and : array(), '%end',
+                            '%if', isset($classicWhere), 'AND %and', isset($classicWhere) ? $classicWhere : array(), '%end',
                             '%if', isset($order), 'ORDER BY %by', $order, '%end',
                             '%if', isset($limit), 'LIMIT %i %end', $limit,
                             '%if', isset($offset), 'OFFSET %i %end', $offset      

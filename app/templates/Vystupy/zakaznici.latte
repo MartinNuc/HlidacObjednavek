@@ -6,7 +6,11 @@
 <h1>{block #title}Odběry{/block}</h1>
 <p class="noPrint">Vyberte z každé skupiny alespoň jednu volbu.</p>
 {snippet formZakaznici}
-    {control filtrZakaznici}
+    {if $user->isInRole('host')}
+        {control filtrZakazniciHost}
+    {else}
+        {control filtrZakaznici}
+    {/if}
 {/snippet}
 
 {snippet strankyLong}

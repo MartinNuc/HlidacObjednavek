@@ -62,6 +62,8 @@ class ProhledavaniZakaznikuPresenter extends BasePresenter {
      * Render default
      */
     public function renderDefault() {
+        $this->redirect('hledaniZakazniku:default');
+        
         if (!$this->getUser()->isLoggedIn())
             $this->redirect('sign:in');
 

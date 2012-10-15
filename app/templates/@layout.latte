@@ -103,7 +103,9 @@ jQuery(function($) {
                 <li><a href="{plink Hlidac:default}">Hlídač objednávek</a></li>
                 <li><a href="{plink SeznamOblasti:default}">Seznam oblastí</a></li>
                 <li><a href="{plink HledaniZakazniku:default}">Vyhledávání</a></li>
-                <li><a href="{plink TiskObjednavek:seznam}">Objednávky k tisku</a></li>
+                {if !$user->isInRole('host')}
+                    <li><a href="{plink TiskObjednavek:seznam}">Objednávky k tisku</a></li>
+                {/if}
                 <li><a href="{plink Vystupy:default}">Tiskové výstupy</a></li>
                 <li><a href="{plink Servis:default}">Servis</a></li>
             </ul>

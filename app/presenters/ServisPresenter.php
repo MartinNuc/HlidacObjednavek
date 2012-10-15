@@ -66,14 +66,24 @@ class ServisPresenter extends BasePresenter {
         $vp = new VisualPaginator($this, 'vp');
         $paginator = $vp->getPaginator();
         $paginator->itemsPerPage = 20;
-        $paginator->itemCount = count($this -> model -> getAutomatyHledani(NULL,
-                array("automaty.bmb" => $this->filtr_bmb, "automaty.layout" => $this->filtr_layout,
-                    "automaty.vyrobni_cislo" => $this->filtr_vyrobni_cislo, "automaty.nazev" => $this->filtr_nazev),
-                NULL, NULL));
+        
+        if ($this->getUser()->isInRole('host'))
+        {
+            $where = array("automaty.bmb" => $this->filtr_bmb, "automaty.layout" => $this->filtr_layout,
+                        "automaty.vyrobni_cislo" => $this->filtr_vyrobni_cislo, "automaty.nazev" => $this->filtr_nazev,
+                        "automaty.osobni" => 0, "zakaznici.osobni_zakaznik" => 0);
+        }
+        else
+        {
+            $where = array("automaty.bmb" => $this->filtr_bmb, "automaty.layout" => $this->filtr_layout,
+                        "automaty.vyrobni_cislo" => $this->filtr_vyrobni_cislo, "automaty.nazev" => $this->filtr_nazev);       
+        }
+        
+
+        
+        $paginator->itemCount = count($this -> model -> getAutomatyHledani(NULL, $where,NULL, NULL));
         $items = $this -> model -> getAutomatyHledani(array("id_oblast" => "DSC", "zakaznik_nazev" => "ASC"),
-                array("automaty.bmb" => $this->filtr_bmb, "automaty.layout" => $this->filtr_layout,
-                    "automaty.vyrobni_cislo" => $this->filtr_vyrobni_cislo, "automaty.nazev" => $this->filtr_nazev),
-                     $paginator->offset, $paginator->itemsPerPage);
+                $where,$paginator->offset, $paginator->itemsPerPage);
         
         $this->template->items = $items;
         if ($this->isAjax())

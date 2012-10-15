@@ -1,0 +1,57 @@
+{block navigace}
+<a href="{plink Hlidac:default}">Hlídač objednávek</a> / <a href="{plink Servis:default}">Servis</a> / <a href="{plink Servis:vystupy}">Výstupy</a> / {include #title}
+{/block}
+
+{block content}
+<h1>{block #title}Výstup podle skupin{/block}</h1>
+
+{snippet formZakaznici}
+    {control filtrSkupiny}
+{/snippet}
+{snippet strankyLong}
+<table class="table opravy">
+    <thead>
+        <tr>
+            <th>Datum</th>
+            <th>Cena</th>
+        </tr>
+    </thead>
+    <tbody>
+        {if count($items) == 0}
+            <tr class="licha"><td colspan="8">Žádná data</td></tr>
+        {/if}
+
+	{assign $i => 0}
+        {assign $cena_celkem => 0}
+	{foreach $items as $item}	
+		{if $i % 2 }
+                     <tr class="slight_border licha">
+                {else}
+                     <tr class="slight_border suda">
+                {/if}
+
+		<td>
+                    <a href="{plink Opravy:detail, $item->id_oprava}">{$item->formatovane_datum}</a>
+                </td><td>
+                {$item->cena |number:2:',':' '} Kč
+		{assign $i => $i+1}
+                {assign $cena_celkem => $cena_celkem + $item->cena}
+		</td>
+		</tr>
+	{/foreach}
+    </tbody>
+    <tfoot>
+        <tr>
+            <td>
+                Celkové náklady za toto období:
+            </td>
+            <td>
+                {$cena_celkem |number:2:',':' '} Kč
+            </td>
+        </tr>
+    </tfoot>        
+</table>
+<p>
+
+</p>
+{/snippet}

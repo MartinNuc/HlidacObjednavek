@@ -26,7 +26,7 @@ class PolozkyOpravy  extends Nette\Object
             if (isset($this->opravy) == false)
                 $this->opravy = array();
             $item->id = Nette\Utils\Strings::random(15);
-            $this->opravy[$item->id] = new \ArrayObject(array("pocet" => $item->pocet, "id" => $item->id, "cena" => $item->cena, "id_skupina" => $item->id_skupina, "popis" => $item->popis));
+            $this->opravy[$item->id] = new \ArrayObject(array("pocet" => $item->pocet, "id" => $item->id, "cena" => $item->cena, "id_skupina" => $item->id_skupina, "popis" => $item->popis, "placene_zakaznikem" => $item->placene_zakaznikem));
         }
  
         public function remove($id)

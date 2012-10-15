@@ -1,4 +1,5 @@
 <?php
+use Nette\Diagnostics\Debugger;
 
 /**
  * Description of DphModel
@@ -25,6 +26,31 @@ class OpravyModel {
                         '%if', isset($offset), 'OFFSET %i %end', $offset
                     )->setRowClass('Oprava');
         }
+        
+        public function getOpravyContext($order = NULL, $where = NULL, $offset = NULL, $limit = NULL, $filtr_oblasti = NULL)
+        {
+            try {
+             $ret = dibi::query(
+                        'SELECT id_oprava, id_automat, automaty.nazev, date_format(datum, "%e. %c. %Y") as formatovane_datum, sum(cena*pocet) as cena 
+                            FROM [opravy] ',
+                            'left join [akce] using (id_oprava) ',
+                            'left join [automaty] using (id_automat) ',
+                        '%if', isset($where), 'WHERE %and', isset($where) ? $where : array(), '%end',
+                        '%if', isset($filtr_oblasti), isset($filtr_oblasti) ? "AND (" . $filtr_oblasti . ")" : "", '%end ',
+                        'GROUP BY [opravy.id_oprava]',
+                        '%if', isset($order), 'ORDER BY %by', $order, '%end',
+                        '%if', isset($limit), 'LIMIT %i %end', $limit,
+                        '%if', isset($offset), 'OFFSET %i %end', $offset
+                    )->setRowClass('Oprava');
+            }
+            catch (DibiException $e)
+            {
+                Debugger::log("getOpravyContext: " . Dibi::$sql);
+                return null;
+            }
+             return $ret;
+        }
+        
         
         /**
          * Adds new DPH value

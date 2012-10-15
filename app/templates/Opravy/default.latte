@@ -16,6 +16,7 @@
                     <th>Počet</th>
                     <th>Popis</th>
                     <th>Cena</th>
+                    <th>Placeno zákazníkem</th>
                     <th>&nbsp;</th>
                 </tr>
             </thead>
@@ -35,6 +36,8 @@
                         {$polozka->popis}
                         </td><td>
                         {$polozka->cena |number:2:',':' '} Kč
+                        </td><td>
+                        {$polozka->placene_zakaznikem ? "Ano" : "Ne"}
                         </td><td>
                         <a  class="ajax delete" href="{plink Delete!, $polozka->id}"><img alt="Smazat" src="{$basePath}/images/delete.png"></a>
                         {assign $i => $i+1}

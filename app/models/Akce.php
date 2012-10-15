@@ -46,6 +46,7 @@ class Akce extends DibiRow
 
         $this->id_akce = $res->id_akce;
         $this->popis = $res->popis;
+        $this->placene_zakaznikem = $res->placene_zakaznikem;
         $this->cena = $res->cena;
         $this->id_skupina = $res->id_skupina;
         $this->id_oprava = $res->id_oprava;

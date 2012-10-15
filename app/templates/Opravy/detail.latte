@@ -3,7 +3,13 @@
 {/block}
 
 {block content}
-<h1>{block #title}Detail opravy automatu {if $id_automat != null}{$automat->nazev} (BMB: {$automat->bmb}){/if}{/block}</h1>
+<h1>{block #title}Detail opravy automatu{/block}</h1>
+<p>
+    Datum opravy: {$oprava->formatovane_datum}<br>
+    Automat: <a href="{plink Opravy:seznam, $oprava->id_automat}">{$automat->nazev}</a><br>
+    BMB: {$automat->bmb}<br>
+    Výrobní číslo: {$automat->vyrobni_cislo}
+</p>
 {snippet stranky}
 {control vp}
 <table class="table opravy">
@@ -13,6 +19,7 @@
             <th>Počet</th>
             <th>Cena za kus</th>
             <th>Cena celkem</th>
+            <th>Placeno zákazníkem</th>
             <th>Skupina</th>
             <th>&nbsp;</th>
         </tr>
@@ -39,6 +46,8 @@
                 {$item->cena |number:2:',':' '} Kč
                 </td><td>
                 {$item->cena*$item->pocet |number:2:',':' '} Kč
+                </td><td>
+                {$item->placene_zakaznikem ? "Ano" : "Ne"}
                 </td><td>
                 {$item->nazev}
                 </td><td>

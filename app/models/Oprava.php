@@ -38,7 +38,7 @@ class Oprava extends DibiRow
         $res = new Oprava();
 
         if (isset($this->id_oprava))
-            $res = dibi::query('SELECT * FROM [oprava] WHERE [id_oprava]=%i', $this->id_oprava)->setRowClass('Oprava')->fetch();
+            $res = dibi::query('SELECT *, date_format(datum, "%e. %c. %Y") as formatovane_datum FROM [opravy] WHERE [id_oprava]=%i', $this->id_oprava)->setRowClass('Oprava')->fetch();
         else return false;
         
         if ($res == false)
@@ -47,6 +47,7 @@ class Oprava extends DibiRow
         $this->id_oprava = $res->id_oprava;
         $this->id_automat = $res->id_automat;
         $this->datum = $res->datum;
+        $this->formatovane_datum = $res->formatovane_datum;
         
         return true;
     }

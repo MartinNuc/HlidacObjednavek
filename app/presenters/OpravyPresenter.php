@@ -57,6 +57,7 @@ class OpravyPresenter extends BasePresenter {
             $form->addText('pocet', '')->setAttribute('autoComplete', "off")->addRule(Form::FILLED, 'Zadejte počet.')->addRule(Form::INTEGER, 'Zadejte číslo.');
             $form->addText('popis', '')->setAttribute('autoComplete', "off")->addRule(Form::FILLED, 'Zadejte popis.');
             $form->addText('cena', '')->setAttribute('autoComplete', "off")->addRule(Form::FILLED, 'Zadejte cenu.')->addRule(Form::FLOAT, 'Zadejte číslo.');
+            $form->addCheckbox('placene_zakaznikem', 'Platí zák.');
             $form->addHidden('itemId', $itemId);
             $form->addSubmit('novaPolozka', 'Přidat')->setAttribute('class', 'btnPolozka');
             $form->onSuccess[] = callback($that, 'novaPolozka_submit');
@@ -70,6 +71,7 @@ class OpravyPresenter extends BasePresenter {
         $form->addText('pocet', 'Počet')->setAttribute('autoComplete', "off")->addRule(Form::FILLED, 'Zadejte počet.')->addRule(Form::INTEGER, 'Zadejte číslo.');
         $form->addText('popis', 'Popis')->setAttribute('autoComplete', "off")->addRule(Form::FILLED, 'Zadejte popis.');
         $form->addText('cena', 'Cena')->setAttribute('autoComplete', "off")->addRule(Form::FILLED, 'Zadejte cenu.')->addRule(Form::FLOAT, 'Zadejte číslo.');
+        $form->addCheckbox('placene_zakaznikem', 'Placeno zákazníkem');
         
         foreach ($this->model->getSkupiny() as $key => $value)
             $pole[$value->id_skupina]=$value->nazev;
@@ -94,6 +96,7 @@ class OpravyPresenter extends BasePresenter {
         $p->cena = $form['cena']->getValue();
         $p->popis = $form['popis']->getValue();
         $p->pocet = $form['pocet']->getValue();
+        $p->placene_zakaznikem = $form['placene_zakaznikem']->getValue();
         $p->id_oprava = $form['id']->getValue();
         $p->id_skupina = $form['skupina']->getValue();
         // ulozit
@@ -104,7 +107,8 @@ class OpravyPresenter extends BasePresenter {
         else {
             $form['pocet']->setValue("");
             $form['popis']->setValue("");
-            $form['cena']->setValue("");
+            $form['popis']->setValue("");
+            $form['placene_zakaznikem']->setValue(false);
             $this->invalidateControl('stranky');
         }
     }
@@ -117,6 +121,7 @@ class OpravyPresenter extends BasePresenter {
             $pol = new PolozkaOpravy();
             $pol->pocet = $form['pocet']->getValue();
             $pol->popis = $form['popis']->getValue();
+            $pol->placene_zakaznikem = $form['placene_zakaznikem']->getValue();
             $pol->cena = $form['cena']->getValue();
             $pol->id_skupina = $form['itemId']->getValue();
             $this->context->polozkyOpravy->add($pol);
@@ -199,6 +204,7 @@ class OpravyPresenter extends BasePresenter {
                 $p->cena = $polozka["cena"];
                 $p->popis = $polozka["popis"];
                 $p->pocet = $polozka["pocet"];
+                $p->placene_zakaznikem = $polozka["placene_zakaznikem"];
                 $p->id_oprava = $oprava->id;
                 $p->id_skupina = $polozka["id_skupina"];
                 // ulozit
@@ -270,6 +276,13 @@ class OpravyPresenter extends BasePresenter {
         
         $this["pridatPolozku"]["id"]->setValue($id_oprava);
         
+        $oprava = new Oprava();
+        $oprava->id_oprava = $id_oprava;
+        $oprava->fetch();
+        $id_automat = $oprava->id_automat;
+        
+        $this->template->oprava = $oprava;
+        
         //SELECT sum(cena*pocet) FROM opravy o left join akce using (id_oprava) group by id_oprava
         $vp = new VisualPaginator($this, 'vp');
         $paginator = $vp->getPaginator();
@@ -279,7 +292,7 @@ class OpravyPresenter extends BasePresenter {
         $this->template->id_automat = $this->id_automat;
         
         $automat = $this -> automatyModel -> getAutomaty(NULL, array(
-                'id_automat' => $this->id_automat))->fetch();
+                'id_automat' => $id_automat))->fetch();
         $this->template->automat = $automat;
     }
     
@@ -309,6 +322,7 @@ class OpravyPresenter extends BasePresenter {
             $p->cena = $polozka["cena"];
             $p->popis = $polozka["popis"];
             $p->pocet = $polozka["pocet"];
+            $p->placene_zakaznikem = $polozka["placene_zakaznikem"];
             
             $cena += $p->cena * $p->pocet;
             

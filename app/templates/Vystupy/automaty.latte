@@ -6,7 +6,6 @@
 <h1>{block #title}Seznam zákazníků{/block}</h1>
 
 <p class="noPrint">Vyberte z každé skupiny alespoň jednu volbu.</p>
-
 {snippet formAutomaty}
     {if $user->isInRole('host')}
         {control filtrAutomatyHost}
@@ -14,7 +13,7 @@
         {control filtrAutomaty} 
     {/if}
 {/snippet}
-
+{control automatyExcel}
 {snippet stranky}
 <table class="table zakaznici">
     <thead>

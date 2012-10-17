@@ -1,0 +1,6 @@
+Nastaveni automatu na osobni, pokud jsou u osobniho zakaznika:
+update automaty set osobni=0 where
+ id_automat in
+ (SELECT distinct id_automat FROM (select * from automaty) as automaty
+  left join zakaznici using (id_zakaznik)
+  where zakaznici.osobni_zakaznik=0 group by id_automat)

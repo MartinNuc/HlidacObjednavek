@@ -54,7 +54,7 @@ class OpravyPresenter extends BasePresenter {
             $renderer->wrappers['control']['container'] = NULL;
             $renderer->wrappers['pair']['container'] = \Nette\Utils\Html::el('div')->class('oprava_polozka');
 
-            $form->addText('pocet', '')->setAttribute('autoComplete', "off")->addRule(Form::FILLED, 'Zadejte počet.')->addRule(Form::INTEGER, 'Zadejte číslo.');
+            $form->addText('pocet', '')->setAttribute('autoComplete', "off")->addRule(Form::FILLED, 'Zadejte počet.')->addRule(Form::FLOAT, 'Zadejte číslo.');
             $form->addText('popis', '')->setAttribute('autoComplete', "off")->addRule(Form::FILLED, 'Zadejte popis.');
             $form->addText('cena', '')->setAttribute('autoComplete', "off")->addRule(Form::FILLED, 'Zadejte cenu.')->addRule(Form::FLOAT, 'Zadejte číslo.');
             $form->addCheckbox('placene_zakaznikem', 'Platí zák.');

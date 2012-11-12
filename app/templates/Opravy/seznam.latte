@@ -34,7 +34,7 @@
 		<td>
                     <a href="{plink detail, $item->id_oprava}">{$item->formatovane_datum}</a>
                 </td><td>
-                {$item->cena |number:2:',':' '} Kč
+                {$item->cena |number:2:',':' '} {$mena}
                 </td><td>
                 {if $user->isInRole('admin')}
                     <a class="ajax delete" href="{plink DeleteOprava!, $item->id_oprava}"><img alt="Delete" src="{$basePath}/images/delete.png"></a>
@@ -49,6 +49,6 @@
     </tbody>
 </table>
 <p>
-Celková cena za toto období: {$cena_celkem |number:2:',':' '} Kč
+Celková cena za toto období: {$cena_celkem |number:2:',':' '} {$mena}
 </p>
 {/snippet}

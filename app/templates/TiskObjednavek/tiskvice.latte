@@ -39,8 +39,8 @@ IČ: {$zakaznik->ico}
 {/foreach}
 </p>
 <p>
-Cena bez DPH: {$objednavka->cena_bez_dph |number:2:',':' '} Kč<br/>
-Cena s DPH: {$objednavka->cena_s_dph |number:2:',':' '} Kč
+Cena bez DPH: {$objednavka->cena_bez_dph |number:2:',':' '} {$mena}<br/>
+Cena s DPH: {$objednavka->cena_s_dph |number:2:',':' '} {$mena}
 </p>
 {if $objednavka->poznamka != ""}
     <p>Poznámka: {$objednavka->poznamka}</p>

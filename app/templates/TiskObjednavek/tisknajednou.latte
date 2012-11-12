@@ -40,8 +40,8 @@
         {$kontakt->jmeno} ({$kontakt->telefon})<br/>
     {/foreach}
     </p>
-    <p>Cena bez DPH: {$objednavka->cena_bez_dph |number:2:',':' '} Kč<br/>
-    Cena s DPH: {$objednavka->cena_s_dph |number:2:',':' '} Kč</p>
+    <p>Cena bez DPH: {$objednavka->cena_bez_dph |number:2:',':' '} {$mena}<br/>
+    Cena s DPH: {$objednavka->cena_s_dph |number:2:',':' '} {$mena}</p>
     {if $objednavka->pozn != ""}
         <p>Poznámka: {$objednavka->pozn}</p>
     {/if}

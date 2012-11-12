@@ -53,22 +53,22 @@
                     </td>
                     {if $user->isInRole('admin')}
                         <td>
-                            {$item->nakupni_cena |number:2:',':' '} Kč
+                            {$item->nakupni_cena |number:2:',':' '} {$mena}
                         </td> 
                     {/if}
                     <td>
-                        {$item->prodejni_cena |number:2:',':' '} Kč
+                        {$item->prodejni_cena |number:2:',':' '} {$mena}
                     </td>
                     <td>
                         {$item->skladem} ks
                     </td> 
                     {if $user->isInRole('admin')}
                         <td>
-                            {$item->nakupni_cena * $item->skladem |number:2:',':' '} Kč
+                            {$item->nakupni_cena * $item->skladem |number:2:',':' '} {$mena}
                         </td>            
                     {/if}
                     <td>
-                        {$item->prodejni_cena * $item->skladem |number:2:',':' '} Kč
+                        {$item->prodejni_cena * $item->skladem |number:2:',':' '} {$mena}
                     </td> 
                 </tr>
             {/foreach}
@@ -85,11 +85,11 @@
                     </td>
                     {if $user->isInRole('admin')}
                         <td>
-                            {$soucty_nc[$kat->id_kategorie]|number:2:',':' '} Kč
+                            {$soucty_nc[$kat->id_kategorie]|number:2:',':' '} {$mena}
                         </td>
                     {/if}
                     <td>
-                        {$soucty_pc[$kat->id_kategorie]|number:2:',':' '} Kč
+                        {$soucty_pc[$kat->id_kategorie]|number:2:',':' '} {$mena}
                     </td>
                 </tr>
             {assign $i => $i+1} 
@@ -108,11 +108,11 @@
                 </td>
                 {if $user->isInRole('admin')}
                     <td>
-                        {$soucty_nc_celkem|number:2:',':' '} Kč
+                        {$soucty_nc_celkem|number:2:',':' '} {$mena}
                     </td>
                 {/if}
                 <td>
-                    {$soucty_pc_celkem|number:2:',':' '} Kč
+                    {$soucty_pc_celkem|number:2:',':' '} {$mena}
                 </td>
             </tr>
         {/if}

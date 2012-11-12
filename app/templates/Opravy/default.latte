@@ -35,7 +35,7 @@
                         </td><td>
                         {$polozka->popis}
                         </td><td>
-                        {$polozka->cena |number:2:',':' '} Kč
+                        {$polozka->cena |number:2:',':' '} {$mena}
                         </td><td>
                         {$polozka->placene_zakaznikem ? "Ano" : "Ne"}
                         </td><td>
@@ -51,7 +51,7 @@
             {control opravaPolozkaForm-$item->id_skupina}
         </div>
     {/foreach}
-    <div id="cena">Cena: {$cena |number:2:',':' '} Kč</div>
+    <div id="cena">Cena: {$cena |number:2:',':' '} {$mena}</div>
     {control zadatOpravuForm}
 </div>
 <div id="detail_automatu">
@@ -146,7 +146,7 @@
                     </td><td>
                         {$item->formatovane_datum}
                     </td><td>
-                    {$item->cena |number:2:',':' '} Kč
+                    {$item->cena |number:2:',':' '} {$mena}
                     {assign $i => $i+1}
                     {assign $cena_celkem => $cena_celkem + $item->cena}
                     </td>
@@ -156,6 +156,6 @@
     </table>
 </div>
 <p>
-Celková cena za toto období: {$cena_celkem |number:2:',':' '} Kč
+Celková cena za toto období: {$cena_celkem |number:2:',':' '} {$mena}
 </p>
 {/snippet}

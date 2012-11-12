@@ -43,9 +43,9 @@
                 </td><td>
                 {$item->pocet}
                 </td><td>
-                {$item->cena |number:2:',':' '} Kč
+                {$item->cena |number:2:',':' '} {$mena}
                 </td><td>
-                {$item->cena*$item->pocet |number:2:',':' '} Kč
+                {$item->cena*$item->pocet |number:2:',':' '} {$mena}
                 </td><td>
                 {$item->placene_zakaznikem ? "Ano" : "Ne"}
                 </td><td>
@@ -64,7 +64,7 @@
     </tbody>
 </table>
 <p>
-Celková cena: {$cena_celkem |number:2:',':' '} Kč
+Celková cena: {$cena_celkem |number:2:',':' '} {$mena}
 </p>
 {/snippet}
 {if $user->isInRole('admin')}

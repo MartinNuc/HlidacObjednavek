@@ -601,7 +601,6 @@ class ZakazniciPresenter extends BasePresenter {
     public function addZbozi_submit($form)
     {
         $zakaznik = new Zakaznik();
-        //$form = $btn->form;
         $zakaznik->id_zakaznik = $form['id_zakaznik']->getValue();
         $zbozi = new Zbozi();
         $zbozi->nazev = $form['zbozi']->getValue();
@@ -618,7 +617,7 @@ class ZakazniciPresenter extends BasePresenter {
             $this->redirect('this');
         else {
             $this->invalidateControl('listZbozi');
-            //$this->invalidateControl('formZbozi');
+            $this->invalidateControl('formZbozi');
             $form->setValues(array(), TRUE);
         }
         //$this->sendPayload();
@@ -676,7 +675,7 @@ class ZakazniciPresenter extends BasePresenter {
             //$this->invalidateControl('form');
             $form->setValues(array(), TRUE);
         }
-        $this->terminate();
+        //$this->terminate();
     }
         
     /**

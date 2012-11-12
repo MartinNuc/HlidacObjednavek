@@ -125,7 +125,12 @@ class AutomatyModel
         public function addAutomat($automat)
         {
             if (dibi::query("INSERT INTO [automaty] ", $automat))
-                return dibi::insertId();
+            {
+                $date = date('Y-m-d');
+                $id = dibi::insertId();
+                dibi::query("INSERT INTO [presuny_automatu] ", array('id_automat' => $id, 'id_zakaznik' => $automat->id_zakaznik, 'datum' => $date));
+                return $id;
+            }
             else
                 return false;
         }

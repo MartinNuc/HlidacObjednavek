@@ -19,10 +19,12 @@
             {/if}
             <th>Prodej. cena</th>
             <th>Skladem</th>
-            {if $user->isInRole('admin')}
+            {if $user->isInRole('user')==false}
                 <th>Celk. NC cena</th>
             {/if}
-            <th>Celk. PC cena</th>
+            {if $user->isInRole('host')==false}
+                <th>Celk. PC cena</th>
+            {/if}   
         </tr>
     </thead>
     <tbody>
@@ -62,14 +64,16 @@
                     <td>
                         {$item->skladem} ks
                     </td> 
-                    {if $user->isInRole('admin')}
+                    {if $user->isInRole('user')==false}
                         <td>
                             {$item->nakupni_cena * $item->skladem |number:2:',':' '} {$mena}
                         </td>            
                     {/if}
-                    <td>
-                        {$item->prodejni_cena * $item->skladem |number:2:',':' '} {$mena}
-                    </td> 
+                    {if $user->isInRole('host')==false}
+                        <td>
+                            {$item->prodejni_cena * $item->skladem |number:2:',':' '} {$mena}
+                        </td> 
+                    {/if}
                 </tr>
             {/foreach}
                 <tr>
@@ -83,14 +87,16 @@
                     <td>
                         Celkem:
                     </td>
-                    {if $user->isInRole('admin')}
+                    {if $user->isInRole('user')==false}
                         <td>
                             {$soucty_nc[$kat->id_kategorie]|number:2:',':' '} {$mena}
                         </td>
                     {/if}
-                    <td>
-                        {$soucty_pc[$kat->id_kategorie]|number:2:',':' '} {$mena}
-                    </td>
+                    {if $user->isInRole('host')==false}
+                        <td>
+                            {$soucty_pc[$kat->id_kategorie]|number:2:',':' '} {$mena}
+                        </td>
+                    {/if}
                 </tr>
             {assign $i => $i+1} 
 	{/foreach}
@@ -106,14 +112,16 @@
                 <td>
                     Součet celkem:
                 </td>
-                {if $user->isInRole('admin')}
+                {if $user->isInRole('user')==false}
                     <td>
                         {$soucty_nc_celkem|number:2:',':' '} {$mena}
                     </td>
                 {/if}
-                <td>
-                    {$soucty_pc_celkem|number:2:',':' '} {$mena}
-                </td>
+                {if $user->isInRole('host')==false}
+                    <td>
+                        {$soucty_pc_celkem|number:2:',':' '} {$mena}
+                    </td>
+                {/if}
             </tr>
         {/if}
     </tbody>

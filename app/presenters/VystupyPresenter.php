@@ -177,8 +177,8 @@ class VystupyPresenter extends BasePresenter {
                 foreach ($zbozi[$kat->id_kategorie] as $item)
                 {
                     $objPHPExcel->getActiveSheet()->SetCellValue('A' . $i, $item->zkratka);
-                    $objPHPExcel->getActiveSheet()->SetCellValue('B' . $i, number_format($item->nakupni_cena,2, ',', ' ') . " " . $mena);
-                    $objPHPExcel->getActiveSheet()->SetCellValue('C' . $i, number_format($item->prodejni_cena,2, ',', ' ') . " " . $mena  );
+                    $objPHPExcel->getActiveSheet()->SetCellValue('B' . $i, number_format($item->nakupni_cena,2, ',', ' ') . " " . $this->mena);
+                    $objPHPExcel->getActiveSheet()->SetCellValue('C' . $i, number_format($item->prodejni_cena,2, ',', ' ') . " " . $this->mena  );
                     $objPHPExcel->getActiveSheet()->SetCellValue('D' . $i, $item->skladem . " ks");
                     $objPHPExcel->getActiveSheet()->SetCellValue('E' . $i, number_format($item->nakupni_cena * $item->skladem,2, ',', ' ') . " Kč" );
                     $objPHPExcel->getActiveSheet()->SetCellValue('F' . $i, number_format($item->prodejni_cena * $item->skladem,2, ',', ' ') . " Kč" );

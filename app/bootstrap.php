@@ -7,7 +7,6 @@
 use Nette\Diagnostics\Debugger, Nette\Application\Routers\Route;
 use Nette\Forms\Container;
 
-
 // Load Nette Framework
 $params['libsDir'] = __DIR__ . '/../libs';
 require $params['libsDir'] . '/Nette/loader.php';

@@ -7,8 +7,8 @@
  */
 abstract class BasePresenter extends Nette\Application\UI\Presenter
 {
-    
-    public $mena = "€";
+    public $mena;
+    public $language;
     /**
      * Flash messages
      */
@@ -20,7 +20,9 @@ abstract class BasePresenter extends Nette\Application\UI\Presenter
     
     protected function beforeRender()
         {
-            //$config = $this->getConfig($this->defaults);
+            $this->language = $this->context->params['language'];
+            $this->mena = $this->context->params['currency'];
             $this->template->mena = $this->mena;
+            $this->template->language = $this->language;
         }
 }

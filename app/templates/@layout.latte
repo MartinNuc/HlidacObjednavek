@@ -36,25 +36,48 @@
         
 <script type="text/javascript">
 jQuery(function($) {
-    $.datepicker.regional['cs'] = {
-        closeText: 'Zavřít',
-        prevText: '&#x3c;Dříve',
-        nextText: 'Později&#x3e;',
-        currentText: 'Nyní',
-        monthNames: ['leden', 'únor', 'březen', 'duben', 'květen', 'červen', 'červenec', 'srpen',
-            'září', 'říjen', 'listopad', 'prosinec'],
-        monthNamesShort: ['led', 'úno', 'bře', 'dub', 'kvě', 'čer', 'čvc', 'srp', 'zář', 'říj', 'lis', 'pro'],
-        dayNames: ['neděle', 'pondělí', 'úterý', 'středa', 'čtvrtek', 'pátek', 'sobota'],
-        dayNamesShort: ['ne', 'po', 'út', 'st', 'čt', 'pá', 'so'],
-        dayNamesMin: ['ne', 'po', 'út', 'st', 'čt', 'pá', 'so'],
-        weekHeader: 'Týd',
-        dateFormat: 'dd. mm. yy',
-        firstDay: 1,
-        isRTL: false,
-        showMonthAfterYear: false,
-        yearSuffix: ''
-    };
-    $.datepicker.setDefaults($.datepicker.regional['cs']);
+    {if $language == 'cs'}
+        $.datepicker.regional['cs'] = {
+            closeText: 'Zavřít',
+            prevText: '&#x3c;Dříve',
+            nextText: 'Později&#x3e;',
+            currentText: 'Nyní',
+            monthNames: ['leden', 'únor', 'březen', 'duben', 'květen', 'červen', 'červenec', 'srpen',
+                'září', 'říjen', 'listopad', 'prosinec'],
+            monthNamesShort: ['led', 'úno', 'bře', 'dub', 'kvě', 'čer', 'čvc', 'srp', 'zář', 'říj', 'lis', 'pro'],
+            dayNames: ['neděle', 'pondělí', 'úterý', 'středa', 'čtvrtek', 'pátek', 'sobota'],
+            dayNamesShort: ['ne', 'po', 'út', 'st', 'čt', 'pá', 'so'],
+            dayNamesMin: ['ne', 'po', 'út', 'st', 'čt', 'pá', 'so'],
+            weekHeader: 'Týd',
+            dateFormat: 'dd. mm. yy',
+            firstDay: 1,
+            isRTL: false,
+            showMonthAfterYear: false,
+            yearSuffix: ''
+        };
+        $.datepicker.setDefaults($.datepicker.regional['cs']);
+   {elseif $language == 'sk'}
+        $.datepicker.regional['sk'] = {
+            closeText: 'Zavřít',
+            prevText: '&#x3c;Dříve',
+            nextText: 'Později&#x3e;',
+            currentText: 'Nyní',
+            monthNames: ['Január', 'Február', 'Marec', 'Apríl', 'Máj', 'Jún', 'Júl', 'August',
+                'September', 'Október', 'November', 'December'],
+            monthNamesShort: ['Jan', 'Feb', 'Mar', 'Apr', 'Máj', 'Jún', 'Júl', 'Aug', 'Sep', 'Okt', 'Nov', 'Dec'],
+            dayNames: ['neděle', 'pondělí', 'úterý', 'středa', 'čtvrtek', 'pátek', 'sobota'],
+            dayNamesShort: ['ne', 'po', 'út', 'st', 'čt', 'pá', 'so'],
+            dayNamesMin: ['ne', 'po', 'út', 'st', 'čt', 'pá', 'so'],
+            weekHeader: 'Týd',
+            dateFormat: 'dd. mm. yy',
+            firstDay: 1,
+            isRTL: false,
+            showMonthAfterYear: false,
+            yearSuffix: ''
+        };
+        $.datepicker.setDefaults($.datepicker.regional['sk']);
+    {/if}
+       
 });
 </script>
 <script type="text/javascript">

@@ -1,0 +1,70 @@
+{block navigace}
+<a href="{plink Hlidac:default}">Hlídač objednávek</a> / <a href="{plink Vystupy:default}">Tiskové výstupy</a> / {include #title}
+{/block}
+
+{block content}
+<h1>{block #title}Automaty{/block}</h1>
+
+{snippet formAutomaty}
+    {if $user->isInRole('host')}
+        {control filtrAutomatyNewHost}
+    {else}
+        {control filtrAutomatyNew} 
+    {/if}
+{/snippet}
+{control automatyNewExcel}
+{snippet stranky}
+<table class="table automaty">
+    <thead>
+        <tr>
+            <th>Název</th>
+            <th>Výrobní číslo</th>
+            <th>Zákazník</th>
+            <th>Umístění</th>
+            <th>BMB</th>
+            <th>Oblast</th>
+        </tr>
+    </thead>
+    <tbody>
+        {if count($items) == 0}
+            <tr class="licha"><td colspan="11">Žádná data</td></tr>
+        {/if}
+	{assign $i => 0}
+	{foreach $items as $item}
+            {if $i % 2 }
+                 <tr class="slight_border zakaznik licha">
+            {else}
+                 <tr class="slight_border zakaznik suda">
+            {/if}
+            <td>
+                {$item->nazev}
+            </td>
+            <td>
+                {$item->vyrobni_cislo}
+            </td>            
+            <td>
+                {if isset($item->zakaznik_nazev)}
+                    {if $user->isInRole('admin') && $item->id_zakaznik != 0}
+                        <a href="{plink Zakaznici:edit, $item->id_zakaznik}">{$item->zakaznik_nazev}</a>
+                    {else}
+                        {$item->zakaznik_nazev}
+                    {/if}
+                {else}
+                    &nbsp;
+                {/if}
+            </td>            
+            <td>
+                {$item->umisteni}
+            </td>            
+            <td>
+                {$item->bmb}
+            </td>            
+            <td>
+                {$item->oblast_nazev}
+            </td> 
+
+            {assign $i => $i+1} 
+	{/foreach}
+    </tbody>
+</table>
+{/snippet}

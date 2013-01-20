@@ -21,6 +21,7 @@ class VystupyPresenter extends BasePresenter {
     private $filtr_do = NULL;
     
     private $osobni = 3;
+    private $automaty = 3;
     private $nekupujici = 1;
     private $kategorie = array();
     private $oblasti = array();
@@ -409,6 +410,68 @@ class VystupyPresenter extends BasePresenter {
         $this->terminate();
     }
     
+    protected function createComponentAutomatyNewExcel($name) {
+        $form = new Form($this, $name);
+        $form->addSubmit('send', 'Stáhnout Excel »');
+        $form->onSuccess[] = callback($this, 'automatyNewExcelSubmitted');
+        return $form;
+    }
+
+    public function automatyNewExcelSubmitted($form) {
+        $session = $this->getSession('FilterQuery');
+        $this->automaty = $session["automaty"];
+
+        $where = NULL;
+        if ($this->automaty == 3)
+            $where = NULL;
+        elseif ($this->automaty == 2)
+            $where = array("id_zakaznik" => 0);
+        elseif ($this->automaty == 1)
+            $where = array(array("id_zakaznik > 0"));
+        else
+            $where = array("id_zakaznik" => -1);
+        
+        $items = $this->automatyModel->getAutomaty(array("automaty.nazev" => "ASC"), $where);
+        
+        $objPHPExcel = new PHPExcel();
+        $objPHPExcel->setActiveSheetIndex(0);
+        $objPHPExcel->getActiveSheet()->SetCellValue('A1', 'Název');
+        $objPHPExcel->getActiveSheet()->SetCellValue('B1', 'Výrobní číslo');
+        $objPHPExcel->getActiveSheet()->SetCellValue('C1', 'Zákazník');
+        $objPHPExcel->getActiveSheet()->SetCellValue('D1', 'Umístění');
+        $objPHPExcel->getActiveSheet()->SetCellValue('E1', 'BMB');
+        $objPHPExcel->getActiveSheet()->SetCellValue('F1', 'Oblast');
+        $objPHPExcel->getActiveSheet()->setTitle('Export');
+
+        $i = 1;
+        foreach ($items as $item)
+        {
+            $i++;
+            $objPHPExcel->getActiveSheet()->SetCellValue('A' . $i, $item->nazev);
+            $objPHPExcel->getActiveSheet()->SetCellValue('B' . $i, $item->vyrobni_cislo);
+            $objPHPExcel->getActiveSheet()->SetCellValue('C' . $i, $item->zakaznik_nazev);
+            $objPHPExcel->getActiveSheet()->SetCellValue('D' . $i, $item->umisteni);
+            $objPHPExcel->getActiveSheet()->SetCellValue('E' . $i, $item->bmb);
+            $objPHPExcel->getActiveSheet()->SetCellValue('F' . $i, $item->oblast_nazev);
+        }
+        
+        // Save Excel 2007 file
+        $objWriter = new PHPExcel_Writer_Excel2007($objPHPExcel);
+        //$objWriter = new PHPExcel_Writer_Excel5($objPHPExcel);
+        $response = Nette\Environment::getHttpResponse();
+
+        $response->setHeader('Content-Type','application/vnd.ms-excel');
+        $response->setHeader('Content-Type', 'application/force-download');
+        $response->setHeader('Content-Type', 'application/octet-stream');
+        $response->setHeader('Content-Type', 'application/download');
+        $response->setHeader('Content-Disposition', 'attachment; filename="export.xlsx"');
+        $response->setHeader('Content-Transfer-Encoding', 'binary');
+
+
+        $objWriter->save('php://output');
+        $this->terminate();
+    }
+    
     /**
      * Form for filtering customers
      * @param type $name name of form
@@ -498,6 +561,74 @@ class VystupyPresenter extends BasePresenter {
         }
     }
     
+
+    /**
+     * Form for filtering customers
+     * @param type $name name of form
+     * @return Form for FW
+     */
+    public function createComponentFiltrAutomatyNew($name)
+    {
+        $form = new Form($this, $name);
+        $form->getElementPrototype()->class('ajax');
+
+        $form->addGroup("")->setOption('container', Html::el('div')->class('tisk_parametry'));
+        $form->addCheckbox('sklad', "Automaty na skladě")->setDefaultValue(true);
+        $form->addCheckbox('zakaznici', "Automaty u zákazníka")->setDefaultValue(true);
+        $form->addGroup("")->setOption('container', Html::el('div')->class('tisk_tlacitka'));
+        $form->addSubmit('filtrAutomaty', 'Nastavit kritéria');
+        $form->addButton('print', 'Tisk')->getControlPrototype()->class("print");
+        $form->onSuccess[] = callback($this, 'filtrAutomatyNew_submit');
+        return $form;
+    }
+    
+    public function filtrAutomatyNew_submit($form)
+    {        
+        if ($form['sklad']->getValue() && $form['zakaznici']->getValue())
+            $this->automaty = 3;  // vsechno
+        elseif ($form['sklad']->getValue())
+            $this->automaty = 2;  // jen na sklade
+        elseif ($form['zakaznici']->getValue())
+            $this->automaty = 1;  // jen jen u zakaznika
+        else
+            $this->automaty = 0;  // ani jeden
+              
+        $session = $this->getSession('FilterQuery');
+        $session["automaty"] = $this->automaty;
+
+        if (!$this->isAjax())
+            $this->redirect('Vystupy:automatynew');
+        else {
+            $this->invalidateControl('stranky');
+        }
+    }
+    
+    public function createComponentFiltrAutomatyNewHost($name)
+    {
+        $form = new Form($this, $name);
+        $form->getElementPrototype()->class('ajax');
+        /*$renderer = $form->getRenderer();
+        $renderer->wrappers['controls']['container'] = NULL;
+        $renderer->wrappers['label']['container'] = NULL;
+        $renderer->wrappers['control']['container'] = NULL;
+        $renderer->wrappers['pair']['container'] = \Nette\Utils\Html::el('div');*/
+
+        $form->addGroup("")->setOption('container', Html::el('div')->class('tisk_oblasti'));
+        $oblasti = $this->oblastiModel->getOblasti();
+        foreach ($oblasti as $oblast)
+            if ($oblast->id_oblast != 0)
+                $form->addCheckbox('oblast_' . $oblast->id_oblast, $oblast->nazev)->setDefaultValue(false);
+
+        $form->addGroup("")->setOption('container', Html::el('div')->class('tisk_parametry'));
+        $form->addHidden('osobni', 0)->setDefaultValue(false);
+        $form->addHidden('nestle', 0)->setDefaultValue(false);
+        $form->addGroup("")->setOption('container', Html::el('div')->class('tisk_tlacitka'));
+        $form->addSubmit('filtrAutomaty', 'Nastavit kritéria');
+        $form->addButton('print', 'Tisk')->getControlPrototype()->class("print");
+        $form->onSuccess[] = callback($this, 'filtrAutomatyNew_submit');
+        return $form;
+    }
+
     public function actionAutomaty() {
         
     }
@@ -544,6 +675,23 @@ class VystupyPresenter extends BasePresenter {
         $this->template->kontakt_email = $this->automatyModel->getFirstKontakt (NULL)->fetchPairs("id_automat", "email");
         $this->template->kava = $this->zboziModel->getZboziPodleSmlouvy (NULL)->fetchPairs("id_zakaznik", "zkratka");
         $this->template->items = $this->automatyModel->getAutomatyVystup(array("zakaznik_nazev" => "ASC"), $where, $filtr_oblasti);
+    }
+    
+    public function renderAutomatyNew() {
+        if (!$this->getUser()->isLoggedIn())
+            $this->redirect('sign:in');
+
+        $where = NULL;
+        if ($this->automaty == 3)
+            $where = NULL;
+        elseif ($this->automaty == 2)
+            $where = array("id_zakaznik" => 0);
+        elseif ($this->automaty == 1)
+            $where = array(array("id_zakaznik > 0"));
+        else
+            $where = array("id_zakaznik" => -1);
+        
+        $this->template->items = $this->automatyModel->getAutomaty(array("automaty.nazev" => "ASC"), $where);
     }
 
     /********** ZAKAZNICI **************/

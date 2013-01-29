@@ -50,7 +50,7 @@ class ZboziModel
         {
             try {
              $ret = dibi::query(
-                        'SELECT id_zbozi, zkratka, sum(pocet) as pocet FROM objednavky o LEFT JOIN zbozi_objednavky USING (id_objednavka) LEFT JOIN zbozi USING (id_zbozi) WHERE hidden=0
+                        'SELECT id_zbozi, prodejni_cena, zkratka, sum(pocet) as pocet FROM objednavky o LEFT JOIN zbozi_objednavky USING (id_objednavka) LEFT JOIN zbozi USING (id_zbozi) WHERE hidden=0
                          %if', isset($where), 'AND %and', isset($where) ? $where : array(), '%end',
                          '%if', isset($filtr_kategorie), isset($filtr_kategorie) ? "AND (".$filtr_kategorie.")" : "", '%end ',
                          '%if', isset($filtr_oblasti), isset($filtr_oblasti) ? "AND (".$filtr_oblasti.")" : "", '%end ',

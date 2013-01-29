@@ -31,7 +31,7 @@
     </thead>
     <tbody>
         {if count($zakaznici) == 0}
-            <tr class="licha"><td colspan="{count($zbozi)+1}">Žádná data</td></tr>
+            <tr class="licha"><td colspan="{count($zbozi)+1+($zobrazit_ceny ? 1 : 0)}">Žádná data</td></tr>
         {/if}
 	{assign $i => 0}
 	{foreach $zakaznici as $zakaznik}
@@ -82,16 +82,31 @@
                     {assign $i => $i+1}
                 {/foreach}
             {/if}
+            {if ($zobrazit_ceny == true)}
+                <tr>
+                    <td>
+                        {if isset($zakaznik_cena[$zakaznik->id_zakaznik]) && $zakaznik_cena[$zakaznik->id_zakaznik] > 0}
+                            Zákazník celkem: {$zakaznik_cena[$zakaznik->id_zakaznik]} {$mena}
+                        {/if}
+                    </td>
+                    {foreach $zbozi as $zb}
+                    <td>
+                        {if $ceny_zbozi[$zakaznik->id_zakaznik][$zb->id_zbozi] > 0}
+                            {$ceny_zbozi[$zakaznik->id_zakaznik][$zb->id_zbozi]} {$mena}
+                        {/if}
+                    </td>
+                    {/foreach} 
+                </tr>
+            {/if}
 	{/foreach}
         {if count($zakaznici) != 0}
             <tr>
-                <td colspan="1">Celkem</td>
+                <td>Celkem</td>
                 {foreach $soucty_celkem as $zb}
                     <td>
                         {$zb}
                     </td>
                 {/foreach}
-            </tr>
         {/if}
     </tbody>
 </table>

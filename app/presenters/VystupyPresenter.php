@@ -26,6 +26,7 @@ class VystupyPresenter extends BasePresenter {
     private $kategorie = array();
     private $oblasti = array();
     private $skryt_automaty = true;
+    private $zobrazit_ceny = false;
 
     /**
      * (non-phpDoc)
@@ -681,6 +682,9 @@ class VystupyPresenter extends BasePresenter {
         if (!$this->getUser()->isLoggedIn())
             $this->redirect('sign:in');
 
+        if (isset($this->automaty)==false)
+            $this->automaty == 3;
+        
         $where = NULL;
         if ($this->automaty == 3)
             $where = NULL;
@@ -739,6 +743,7 @@ class VystupyPresenter extends BasePresenter {
         
         $form->addGroup("Volitelné");
         $form->addCheckbox('skryt_automaty', "Skrýt automaty")->setDefaultValue(true);
+        $form->addCheckbox('zobrazit_ceny', "Zobrazit ceny")->setDefaultValue(false);
         $form->addGroup("")->setOption('container', Html::el('div')->class('tisk_tlacitka'));
         $form->addSubmit('filtrZakaznici', 'Nastavit kritéria');
         $form->addButton('print', 'Tisk')->getControlPrototype()->class("print");
@@ -785,6 +790,7 @@ class VystupyPresenter extends BasePresenter {
         
         $form->addGroup("Volitelné");
         $form->addCheckbox('skryt_automaty', "Skrýt automaty")->setDefaultValue(true);
+        $form->addCheckbox('zobrazit_ceny', "Zobrazit ceny")->setDefaultValue(false);
         $form->addGroup("")->setOption('container', Html::el('div')->class('tisk_tlacitka'));
         $form->addSubmit('filtrZakaznici', 'Nastavit kritéria');
         $form->addButton('print', 'Tisk')->getControlPrototype()->class("print");
@@ -804,6 +810,7 @@ class VystupyPresenter extends BasePresenter {
 
         $session = $this->getSession('FilterQuery');
         $this->skryt_automaty = $session["skryt_automaty"];
+        $this->zobrazit_ceny = $session["zobrazit_ceny"];
         $this->nekupujici = $session["nekupujici"];
         $this->kategorie = $session["kategorie"];
         $this->oblasti = $session["oblasti"];
@@ -885,15 +892,17 @@ class VystupyPresenter extends BasePresenter {
         $soucty = array();
         $zbozi = array();
         $zbozi = $this->zboziModel->getZbozi(array("id_kategorie" => "ASC","zkratka" => "ASC"), NULL, NULL, NULL, NULL, $filtr_kategorii);
-        
+        $zakaznik_cena = array();
         // pripravim si soucty
         $soucty_celkem = array();
+        $ceny_zbozi = array();
         foreach ($zbozi as $t)
             $soucty_celkem[$t->id_zbozi] = 0;
         
         // pro kazdyho zakaznika udelame soucet toho co koupil
         foreach ($zakaznici as $zakaznik)
         {
+            $zakaznik_cena[$zakaznik->id_zakaznik] = 0;
             // zde se k zakaznikovi najdou vsechna zbozi, ktera bral
             $temp = $this -> zboziModel -> getZboziOdDo($order = array(
                 'zkratka' => 'ASC'), array("id_zakaznik" => $zakaznik->id_zakaznik), $this->filtr_od, $this->filtr_do, $filtr_kategorii, $filtr_oblasti);
@@ -905,6 +914,8 @@ class VystupyPresenter extends BasePresenter {
             {
                 $soucty[$zakaznik->id_zakaznik][$t->id_zbozi] = $t->pocet;
                 $soucty_celkem[$t->id_zbozi] += $t->pocet;
+                $zakaznik_cena[$zakaznik->id_zakaznik]+=$t->pocet * $t->prodejni_cena;
+                $ceny_zbozi[$zakaznik->id_zakaznik][$t->id_zbozi] = $t->pocet * $t->prodejni_cena;
             }
             
             //if ($this->skryt_automaty == true)   // TODO: optimalizace, aby se nemuselo zbytecne pocitat ... ale pak chybi v sablone. Nevim co s tim.
@@ -922,7 +933,9 @@ class VystupyPresenter extends BasePresenter {
                     foreach ($zbozi as $t)
                         $automaty_soucty[$zakaznik->id_zakaznik . "_" . $automat->vyrobni_cislo . $automat->bmb][$t->id_zbozi] = "";
                     foreach ($temp as $t)
+                    {
                         $automaty_soucty[$zakaznik->id_zakaznik . "_" . $automat->vyrobni_cislo . $automat->bmb][$t->id_zbozi] = $t->pocet;
+                    }
                 }
             }
 
@@ -935,9 +948,12 @@ class VystupyPresenter extends BasePresenter {
             $skryt_automaty = false;
         else
             $skryt_automaty = true;
-        
-            $automaty_soucty = $automaty_soucty;
-            $automaty = $automaty;
+        if ($this->zobrazit_ceny != true)
+            $zobrazit_ceny = false;
+        else
+            $zobrazit_ceny = true;        
+        $automaty_soucty = $automaty_soucty;
+        $automaty = $automaty;
         
         
         $objPHPExcel = new PHPExcel();
@@ -964,9 +980,12 @@ class VystupyPresenter extends BasePresenter {
             $c = "B";
             foreach ($zbozi as $item)
             {
+                $zakaznik_cena[$zakaznik->id_zakaznik]+=$t->pocet * $t->prodejni_cena;
                 $objPHPExcel->getActiveSheet()->SetCellValue($c . $i, $soucty[$zakaznik->id_zakaznik][$item->id_zbozi]);
                 $c++;
             }
+            /*if (isset($zakaznik_cena[$zakaznik->id_zakaznik]))
+                $objPHPExcel->getActiveSheet()->SetCellValue('B' . $i, $zakaznik_cena[$zakaznik->id_zakaznik] . $this->mena);*/
             if ($skryt_automaty == 0)
             {
                 foreach ($automaty[$zakaznik->id_zakaznik] as $item)
@@ -985,6 +1004,22 @@ class VystupyPresenter extends BasePresenter {
                         $c2++;
                     }
                 }   
+            }
+            $i++;
+            if ($zobrazit_ceny == true)
+            {
+                $c = "A";
+                if (isset($zakaznik->nazev))
+                    $objPHPExcel->getActiveSheet()->SetCellValue('A' . $i, $zakaznik_cena[$zakaznik->id_zakaznik]);
+                $c = "B";
+                foreach ($zbozi as $zb)
+                {
+                    if (isset($ceny_zbozi[$zakaznik->id_zakaznik][$zb->id_zbozi]) && $ceny_zbozi[$zakaznik->id_zakaznik][$zb->id_zbozi] > 0)
+                    {
+                        $objPHPExcel->getActiveSheet()->SetCellValue($c . $i, $ceny_zbozi[$zakaznik->id_zakaznik][$zb->id_zbozi]);
+                    }
+                    $c++;
+                }
             }
             $i++;
         }
@@ -1093,9 +1128,11 @@ class VystupyPresenter extends BasePresenter {
             $this->nekupujici = 0;  // ani jeden
 
         $this->skryt_automaty = $form['skryt_automaty']->getValue();
+        $this->zobrazit_ceny = $form['zobrazit_ceny']->getValue();
         
         $session = $this->getSession('FilterQuery');
         $session["skryt_automaty"] = $this->skryt_automaty;
+        $session["zobrazit_ceny"] = $this->zobrazit_ceny;
         $session["nekupujici"] = $this->nekupujici;
         $session["kategorie"] = $this->kategorie;
         $session["osobni"] = $this->osobni;
@@ -1290,23 +1327,31 @@ class VystupyPresenter extends BasePresenter {
         
         // pripravim si soucty
         $soucty_celkem = array();
+        $ceny_zbozi = array();
+        $zakaznik_cena = array();
         foreach ($zbozi as $t)
             $soucty_celkem[$t->id_zbozi] = 0;
         
         // pro kazdyho zakaznika udelame soucet toho co koupil
         foreach ($zakaznici as $zakaznik)
         {
+            $zakaznik_cena[$zakaznik->id_zakaznik] = 0;
             // zde se k zakaznikovi najdou vsechna zbozi, ktera bral
             $temp = $this -> zboziModel -> getZboziOdDo($order = array(
                 'zkratka' => 'ASC'), array("id_zakaznik" => $zakaznik->id_zakaznik), $this->filtr_od, $this->filtr_do, $filtr_kategorii, $filtr_oblasti);
             $soucty[$zakaznik->id_zakaznik] = array();
             // zde se nalezena zbozi sectou
             foreach ($zbozi as $t)
+            {
                 $soucty[$zakaznik->id_zakaznik][$t->id_zbozi] = "";
+                $ceny_zbozi[$zakaznik->id_zakaznik][$t->id_zbozi] = 0;
+            }
             foreach ($temp as $t)
             {
                 $soucty[$zakaznik->id_zakaznik][$t->id_zbozi] = $t->pocet;
                 $soucty_celkem[$t->id_zbozi] += $t->pocet;
+                $zakaznik_cena[$zakaznik->id_zakaznik]+=$t->pocet * $t->prodejni_cena;
+                $ceny_zbozi[$zakaznik->id_zakaznik][$t->id_zbozi] = $t->pocet * $t->prodejni_cena;
             }
             
             //if ($this->skryt_automaty == true)   // TODO: optimalizace, aby se nemuselo zbytecne pocitat ... ale pak chybi v sablone. Nevim co s tim.
@@ -1332,14 +1377,26 @@ class VystupyPresenter extends BasePresenter {
         $this->template->zakaznici = $zakaznici;
         $this->template->soucty = $soucty;
         $this->template->soucty_celkem = $soucty_celkem;
+        $this->template->zakaznik_cena=$zakaznik_cena;
         $this->template->zbozi = $zbozi;
         if ($this->skryt_automaty != true)
             $this->template->skryt_automaty = false;
         else
             $this->template->skryt_automaty = true;
+
+        if ($this->zobrazit_ceny != true)
+        {
+            $this->template->zobrazit_ceny = false;
+            $this->template->ceny_zbozi = $ceny_zbozi;
+        }
+        else
+        {
+            $this->template->zobrazit_ceny = true;
+            $this->template->ceny_zbozi = $ceny_zbozi;
+        }
         
-            $this->template->automaty_soucty = $automaty_soucty;
-            $this->template->automaty = $automaty;
+        $this->template->automaty_soucty = $automaty_soucty;
+        $this->template->automaty = $automaty;
        
         if ($this->isAjax())
             $this->invalidateControl('strankyLong');

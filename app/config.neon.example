@@ -1,60 +1,53 @@
-#
-# SECURITY WARNING: it is CRITICAL that this file & directory are NOT accessible directly via a web browser!
-#
-# If you don't protect this directory from direct web access, anybody will be able to see your passwords.
-# http://nette.org/security-warning
-#
-common:
-    php: # PHP configuration
-                date.timezone: Europe/Prague
-                # session.save_path: "%tempDir%/sessions"
-                # zlib.output_compression: yes
-
-        services:
-                robotLoader:
-                    run: true
-
-                database:
-                        class: Nette\Database\Connection
-                        arguments: ['mysql:host=localhost;dbname=hlidacobjednavek', 'root', 'password']
-
-                model:
-                        class: Model
-                        arguments: [@database]
-
-                authenticator: 
-                    factory: [@model, createAuthenticatorService]
-                polozkyOpravy:
-                    class: PolozkyOpravy
-                    arguments: [@session]
-                sessionPanel:
-                    class: SessionPanel
-                    arguments:
-                        - @application
-                        - @session  
-
-        nette:
-            debugger:
-                strictMode: true
-                bar:
-                    - @sessionPanel
-production < common:
-    database:
-        driver: mysql
-        host: localhost
-        database: hlidacobjednavek
-        username: root
-        password: password
-        profiler: TRUE
-        charset: utf8
+common: 
+  php: # PHP configuration
+    date.timezone: Europe/Prague
+    # session.save_path: "%tempDir%/sessions"
+    # zlib.output_compression: yes
+  nette:
+    debugger:
+      strictMode: true
+      bar:
+        - @sessionPanel
+    session:
+      autoStart: smart
+      expiration: +5 days   
+  services:
+    model:
+      class: Model
+      arguments: [%database%]
+    connection:
+      class: DibiConnection(%database%)
+    authenticator: Authenticator
+    polozkyOpravy:
+      class: PolozkyOpravy
+      arguments: [@session]
+    sessionPanel:
+      class: SessionPanel
+      arguments:
+        - @session
+  factories:
+  parameters: 
+    language: 'cs'
+    currency: 'Kč'           
 
 development < common:
+  parameters: 
     database:
-        driver: mysql
-        host: localhost
-        database: hlidacobjednavek
-        username: root
-        password: password
-        profiler: TRUE
-        charset: utf8
-console < common:
+      driver: mysql
+      host: localhost
+      database: hlidacobjednavek
+      username: root
+      password: okno
+      profiler: TRUE
+      charset: utf8
+    
+production < common:
+  parameters: 
+    database:
+      driver: mysql
+      host: localhost
+      database: hlidacobjednavek
+      username: root
+      password: okno
+      profiler: TRUE
+      charset: utf8

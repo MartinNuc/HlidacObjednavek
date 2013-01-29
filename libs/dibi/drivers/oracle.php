@@ -1,47 +1,41 @@
 <?php
 
 /**
- * dibi - tiny'n'smart database abstraction layer
- * ----------------------------------------------
+ * This file is part of the "dibi" - smart database abstraction layer.
  *
- * Copyright (c) 2005, 2009 David Grudl (http://davidgrudl.com)
+ * Copyright (c) 2005 David Grudl (http://davidgrudl.com)
  *
- * This source file is subject to the "dibi license" that is bundled
- * with this package in the file license.txt.
- *
- * For more information please see http://dibiphp.com
- *
- * @copyright  Copyright (c) 2005, 2009 David Grudl
- * @license    http://dibiphp.com/license  dibi license
- * @link       http://dibiphp.com
- * @package    dibi
+ * For the full copyright and license information, please view
+ * the file license.txt that was distributed with this source code.
  */
 
 
 /**
  * The dibi driver for Oracle database.
  *
- * Connection options:
- *   - 'database' (or 'db') - the name of the local Oracle instance or the name of the entry in tnsnames.ora
- *   - 'username' (or 'user')
- *   - 'password' (or 'pass')
- *   - 'lazy' - if TRUE, connection will be established only when required
- *   - 'formatDate' - how to format date in SQL (@see date)
- *   - 'formatDateTime' - how to format datetime in SQL (@see date)
- *   - 'charset' - character encoding to set
- *   - 'resource' - connection resource (optional)
+ * Driver options:
+ *   - database => the name of the local Oracle instance or the name of the entry in tnsnames.ora
+ *   - username (or user)
+ *   - password (or pass)
+ *   - charset => character encoding to set
+ *   - formatDate => how to format date in SQL (@see date)
+ *   - formatDateTime => how to format datetime in SQL (@see date)
+ *   - resource (resource) => existing connection resource
+ *   - lazy, profiler, result, substitutes, ... => see DibiConnection options
  *
  * @author     David Grudl
- * @copyright  Copyright (c) 2005, 2009 David Grudl
- * @package    dibi
+ * @package    dibi\drivers
  */
-class DibiOracleDriver extends DibiObject implements IDibiDriver
+class DibiOracleDriver extends DibiObject implements IDibiDriver, IDibiResultDriver, IDibiReflector
 {
 	/** @var resource  Connection resource */
 	private $connection;
 
 	/** @var resource  Resultset resource */
 	private $resultSet;
+
+	/** @var bool */
+	private $autoFree = TRUE;
 
 	/** @var bool */
 	private $autocommit = TRUE;
@@ -52,12 +46,12 @@ class DibiOracleDriver extends DibiObject implements IDibiDriver
 
 
 	/**
-	 * @throws DibiException
+	 * @throws DibiNotSupportedException
 	 */
 	public function __construct()
 	{
 		if (!extension_loaded('oci8')) {
-			throw new DibiDriverException("PHP extension 'oci8' is not loaded.");
+			throw new DibiNotSupportedException("PHP extension 'oci8' is not loaded.");
 		}
 	}
 
@@ -70,7 +64,7 @@ class DibiOracleDriver extends DibiObject implements IDibiDriver
 	 */
 	public function connect(array &$config)
 	{
-		DibiConnection::alias($config, 'charset');
+		$foo = & $config['charset'];
 		$this->fmtDate = isset($config['formatDate']) ? $config['formatDate'] : 'U';
 		$this->fmtDateTime = isset($config['formatDateTime']) ? $config['formatDateTime'] : 'U';
 
@@ -102,25 +96,25 @@ class DibiOracleDriver extends DibiObject implements IDibiDriver
 	/**
 	 * Executes the SQL query.
 	 * @param  string      SQL statement.
-	 * @return IDibiDriver|NULL
+	 * @return IDibiResultDriver|NULL
 	 * @throws DibiDriverException
 	 */
 	public function query($sql)
 	{
-
-		$this->resultSet = oci_parse($this->connection, $sql);
-		if ($this->resultSet) {
-			oci_execute($this->resultSet, $this->autocommit ? OCI_COMMIT_ON_SUCCESS : OCI_DEFAULT);
-			$err = oci_error($this->resultSet);
+		$res = oci_parse($this->connection, $sql);
+		if ($res) {
+			oci_execute($res, $this->autocommit ? OCI_COMMIT_ON_SUCCESS : OCI_DEFAULT);
+			$err = oci_error($res);
 			if ($err) {
 				throw new DibiDriverException($err['message'], $err['code'], $sql);
+
+			} elseif (is_resource($res)) {
+				return $this->createResultDriver($res);
 			}
 		} else {
 			$err = oci_error($this->connection);
 			throw new DibiDriverException($err['message'], $err['code'], $sql);
 		}
-
-		return is_resource($this->resultSet) ? clone $this : NULL;
 	}
 
 
@@ -131,7 +125,7 @@ class DibiOracleDriver extends DibiObject implements IDibiDriver
 	 */
 	public function getAffectedRows()
 	{
-		throw new NotImplementedException;
+		throw new DibiNotImplementedException;
 	}
 
 
@@ -142,7 +136,8 @@ class DibiOracleDriver extends DibiObject implements IDibiDriver
 	 */
 	public function getInsertId($sequence)
 	{
-		throw new NotSupportedException('Oracle does not support autoincrementing.');
+		$row = $this->query("SELECT $sequence.CURRVAL AS ID FROM DUAL")->fetch(TRUE);
+		return isset($row['ID']) ? (int) $row['ID'] : FALSE;
 	}
 
 
@@ -199,7 +194,32 @@ class DibiOracleDriver extends DibiObject implements IDibiDriver
 	 */
 	public function getResource()
 	{
-		return $this->connection;
+		return is_resource($this->connection) ? $this->connection : NULL;
+	}
+
+
+
+	/**
+	 * Returns the connection reflector.
+	 * @return IDibiReflector
+	 */
+	public function getReflector()
+	{
+		return $this;
+	}
+
+
+
+	/**
+	 * Result set driver factory.
+	 * @param  resource
+	 * @return IDibiResultDriver
+	 */
+	public function createResultDriver($resource)
+	{
+		$res = clone $this;
+		$res->resultSet = $resource;
+		return $res;
 	}
 
 
@@ -224,8 +244,7 @@ class DibiOracleDriver extends DibiObject implements IDibiDriver
 
 		case dibi::IDENTIFIER:
 			// @see http://download.oracle.com/docs/cd/B10500_01/server.920/a96540/sql_elements9a.htm
-			$value = str_replace('"', '""', $value);
-			return '"' . str_replace('.', '"."', $value) . '"';
+			return '"' . str_replace('"', '""', $value) . '"';
 
 		case dibi::BOOL:
 			return $value ? 1 : 0;
@@ -239,6 +258,21 @@ class DibiOracleDriver extends DibiObject implements IDibiDriver
 		default:
 			throw new InvalidArgumentException('Unsupported type.');
 		}
+	}
+
+
+
+	/**
+	 * Encodes string for use in a LIKE statement.
+	 * @param  string
+	 * @param  int
+	 * @return string
+	 */
+	public function escapeLike($value, $pos)
+	{
+		$value = addcslashes(str_replace('\\', '\\\\', $value), "\x00\\%_");
+		$value = str_replace("'", "''", $value);
+		return ($pos <= 0 ? "'%" : "'") . $value . ($pos >= 0 ? "%'" : "'");
 	}
 
 
@@ -285,12 +319,23 @@ class DibiOracleDriver extends DibiObject implements IDibiDriver
 
 
 	/**
+	 * Automatically frees the resources allocated for this result set.
+	 * @return void
+	 */
+	public function __destruct()
+	{
+		$this->autoFree && $this->getResultResource() && $this->free();
+	}
+
+
+
+	/**
 	 * Returns the number of rows in a result set.
 	 * @return int
 	 */
 	public function getRowCount()
 	{
-		throw new NotSupportedException('Row count is not available for unbuffered queries.');
+		throw new DibiNotSupportedException('Row count is not available for unbuffered queries.');
 	}
 
 
@@ -299,7 +344,6 @@ class DibiOracleDriver extends DibiObject implements IDibiDriver
 	 * Fetches the row at current position and moves the internal cursor to the next position.
 	 * @param  bool     TRUE for associative array, FALSE for numeric
 	 * @return array    array on success, nonarray if no next record
-	 * @internal
 	 */
 	public function fetch($assoc)
 	{
@@ -315,7 +359,7 @@ class DibiOracleDriver extends DibiObject implements IDibiDriver
 	 */
 	public function seek($row)
 	{
-		throw new NotImplementedException;
+		throw new DibiNotImplementedException;
 	}
 
 
@@ -336,19 +380,19 @@ class DibiOracleDriver extends DibiObject implements IDibiDriver
 	 * Returns metadata for all columns in a result set.
 	 * @return array
 	 */
-	public function getColumnsMeta()
+	public function getResultColumns()
 	{
 		$count = oci_num_fields($this->resultSet);
-		$res = array();
+		$columns = array();
 		for ($i = 1; $i <= $count; $i++) {
-			$res[] = array(
-				'name'      => oci_field_name($this->resultSet, $i),
-				'table'     => NULL,
-				'fullname'  => oci_field_name($this->resultSet, $i),
+			$columns[] = array(
+				'name' => oci_field_name($this->resultSet, $i),
+				'table' => NULL,
+				'fullname' => oci_field_name($this->resultSet, $i),
 				'nativetype'=> oci_field_type($this->resultSet, $i),
 			);
 		}
-		return $res;
+		return $columns;
 	}
 
 
@@ -359,12 +403,13 @@ class DibiOracleDriver extends DibiObject implements IDibiDriver
 	 */
 	public function getResultResource()
 	{
-		return $this->resultSet;
+		$this->autoFree = FALSE;
+		return is_resource($this->resultSet) ? $this->resultSet : NULL;
 	}
 
 
 
-	/********************* reflection ****************d*g**/
+	/********************* IDibiReflector ****************d*g**/
 
 
 
@@ -374,18 +419,17 @@ class DibiOracleDriver extends DibiObject implements IDibiDriver
 	 */
 	public function getTables()
 	{
-		$this->query('SELECT * FROM cat');
-		$res = array();
-		while ($row = $this->fetch(FALSE)) {
+		$res = $this->query('SELECT * FROM cat');
+		$tables = array();
+		while ($row = $res->fetch(FALSE)) {
 			if ($row[1] === 'TABLE' || $row[1] === 'VIEW') {
-				$res[] = array(
+				$tables[] = array(
 					'name' => $row[0],
 					'view' => $row[1] === 'VIEW',
 				);
 			}
 		}
-		$this->free();
-		return $res;
+		return $tables;
 	}
 
 
@@ -397,7 +441,7 @@ class DibiOracleDriver extends DibiObject implements IDibiDriver
 	 */
 	public function getColumns($table)
 	{
-		throw new NotImplementedException;
+		throw new DibiNotImplementedException;
 	}
 
 
@@ -409,7 +453,7 @@ class DibiOracleDriver extends DibiObject implements IDibiDriver
 	 */
 	public function getIndexes($table)
 	{
-		throw new NotImplementedException;
+		throw new DibiNotImplementedException;
 	}
 
 
@@ -421,7 +465,7 @@ class DibiOracleDriver extends DibiObject implements IDibiDriver
 	 */
 	public function getForeignKeys($table)
 	{
-		throw new NotImplementedException;
+		throw new DibiNotImplementedException;
 	}
 
 }

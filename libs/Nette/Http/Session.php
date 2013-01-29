@@ -3,7 +3,7 @@
 /**
  * This file is part of the Nette Framework (http://nette.org)
  *
- * Copyright (c) 2004, 2011 David Grudl (http://davidgrudl.com)
+ * Copyright (c) 2004 David Grudl (http://davidgrudl.com)
  *
  * For the full copyright and license information, please view
  * the file license.txt that was distributed with this source code.
@@ -19,14 +19,22 @@ use Nette;
  * Provides access to session sections as well as session settings and management methods.
  *
  * @author     David Grudl
+ *
+ * @property-read bool $started
+ * @property-read string $id
+ * @property   string $name
+ * @property-read \ArrayIterator $iterator
+ * @property   array $options
+ * @property-write $savePath
+ * @property-write ISessionStorage $storage
  */
 class Session extends Nette\Object
 {
 	/** Default file lifetime is 3 hours */
 	const DEFAULT_FILE_LIFETIME = 10800;
 
-	/** @var bool  is required session ID regeneration? */
-	private $regenerationNeeded;
+	/** @var bool  has been session ID regenerated? */
+	private $regenerated;
 
 	/** @var bool  has been session started? */
 	private static $started;
@@ -83,23 +91,24 @@ class Session extends Nette\Object
 
 		$this->configure($this->options);
 
-		if (!defined('SID')) {
-			Nette\Diagnostics\Debugger::tryError();
-			session_start();
-			if (Nette\Diagnostics\Debugger::catchError($e)) {
-				@session_write_close(); // this is needed
-				throw new Nette\InvalidStateException('session_start(): ' . $e->getMessage(), 0, $e);
+		set_error_handler(function($severity, $message) use (& $error) { // session_start returns FALSE on failure since PHP 5.3.0.
+			if (($severity & error_reporting()) === $severity) {
+				$error = $message;
+				restore_error_handler();
 			}
+		});
+		session_start();
+		$this->response->removeDuplicateCookies();
+		restore_error_handler();
+		if ($error && !session_id()) {
+			@session_write_close(); // this is needed
+			throw new Nette\InvalidStateException("session_start(): $error");
 		}
 
 		self::$started = TRUE;
-		if ($this->regenerationNeeded) {
-			session_regenerate_id(TRUE);
-			$this->regenerationNeeded = FALSE;
-		}
 
 		/* structure:
-			__NF: Counter, BrowserKey, Data, Meta
+			__NF: Counter, BrowserKey, Data, Meta, Time
 				DATA: section->variable = data
 				META: section->variable = Timestamp, Browser, Version
 		*/
@@ -108,10 +117,12 @@ class Session extends Nette\Object
 
 		// initialize structures
 		$nf = & $_SESSION['__NF'];
-		if (empty($nf)) { // new session
-			$nf = array('C' => 0);
-		} else {
-			$nf['C']++;
+		@$nf['C']++;
+
+		// regenerate empty session
+		if (empty($nf['Time'])) {
+			$nf['Time'] = time();
+			$this->regenerated = TRUE;
 		}
 
 		// browser closing detection
@@ -133,8 +144,8 @@ class Session extends Nette\Object
 				if (is_array($metadata)) {
 					foreach ($metadata as $variable => $value) {
 						if ((!empty($value['B']) && $browserClosed) || (!empty($value['T']) && $now > $value['T']) // whenBrowserIsClosed || Time
-							|| ($variable !== '' && is_object($nf['DATA'][$section][$variable]) && (isset($value['V']) ? $value['V'] : NULL) // Version
-								!== Nette\Reflection\ClassType::from($nf['DATA'][$section][$variable])->getAnnotation('serializationVersion'))
+							|| (isset($nf['DATA'][$section][$variable]) && is_object($nf['DATA'][$section][$variable]) && (isset($value['V']) ? $value['V'] : NULL) // Version
+								!= Nette\Reflection\ClassType::from($nf['DATA'][$section][$variable])->getAnnotation('serializationVersion')) // intentionally !=
 						) {
 							if ($variable === '') { // expire whole section
 								unset($nf['META'][$section], $nf['DATA'][$section]);
@@ -145,6 +156,11 @@ class Session extends Nette\Object
 					}
 				}
 			}
+		}
+
+		if ($this->regenerated) {
+			$this->regenerated = FALSE;
+			$this->regenerateId();
 		}
 
 		register_shutdown_function(array($this, 'clean'));
@@ -205,7 +221,7 @@ class Session extends Nette\Object
 	 */
 	public function exists()
 	{
-		return self::$started || $this->request->getCookie(session_name()) !== NULL;
+		return self::$started || $this->request->getCookie($this->getName()) !== NULL;
 	}
 
 
@@ -217,15 +233,18 @@ class Session extends Nette\Object
 	 */
 	public function regenerateId()
 	{
-		if (self::$started) {
+		if (self::$started && !$this->regenerated) {
 			if (headers_sent($file, $line)) {
 				throw new Nette\InvalidStateException("Cannot regenerate session ID after HTTP headers have been sent" . ($file ? " (output started at $file:$line)." : "."));
 			}
 			session_regenerate_id(TRUE);
-
-		} else {
-			$this->regenerationNeeded = TRUE;
+			session_write_close();
+			$backup = $_SESSION;
+			session_start();
+			$_SESSION = $backup;
+			$this->response->removeDuplicateCookies();
 		}
+		$this->regenerated = TRUE;
 	}
 
 
@@ -248,7 +267,7 @@ class Session extends Nette\Object
 	 */
 	public function setName($name)
 	{
-		if (!is_string($name) || !preg_match('#[^0-9.][^.]*$#A', $name)) {
+		if (!is_string($name) || !preg_match('#[^0-9.][^.]*\z#A', $name)) {
 			throw new Nette\InvalidArgumentException('Session name must be a string and cannot contain dot.');
 		}
 
@@ -266,7 +285,7 @@ class Session extends Nette\Object
 	 */
 	public function getName()
 	{
-		return session_name();
+		return isset($this->options['name']) ? $this->options['name'] : session_name();
 	}
 
 
@@ -417,6 +436,7 @@ class Session extends Nette\Object
 			if (!strncmp($key, 'session.', 8)) { // back compatibility
 				$key = substr($key, 8);
 			}
+			$key = strtolower(preg_replace('#(.)(?=[A-Z])#', '$1_', $key));
 
 			if ($value === NULL || ini_get("session.$key") == $value) { // intentionally ==
 				continue;
@@ -429,7 +449,7 @@ class Session extends Nette\Object
 
 			} else {
 				if (defined('SID')) {
-					throw new Nette\InvalidStateException("Unable to set 'session.$key' to value '$value' when session has been started by session.auto_start or session_start().");
+					throw new Nette\InvalidStateException("Unable to set 'session.$key' to value '$value' when session has been started" . ($this->started ? "." : " by session.auto_start or session_start()."));
 				}
 				if (isset($special[$key])) {
 					$key = "session_$key";
@@ -488,7 +508,7 @@ class Session extends Nette\Object
 	 * @param  bool    secure
 	 * @return Session  provides a fluent interface
 	 */
-	public function setCookieParams($path, $domain = NULL, $secure = NULL)
+	public function setCookieParameters($path, $domain = NULL, $secure = NULL)
 	{
 		return $this->setOptions(array(
 			'cookie_path' => $path,
@@ -503,9 +523,18 @@ class Session extends Nette\Object
 	 * Returns the session cookie parameters.
 	 * @return array  containing items: lifetime, path, domain, secure, httponly
 	 */
-	public function getCookieParams()
+	public function getCookieParameters()
 	{
 		return session_get_cookie_params();
+	}
+
+
+
+	/** @deprecated */
+	function setCookieParams($path, $domain = NULL, $secure = NULL)
+	{
+		trigger_error(__METHOD__ . '() is deprecated; use setCookieParameters() instead.', E_USER_WARNING);
+		return $this->setCookieParameters($path, $domain, $secure);
 	}
 
 
@@ -546,7 +575,7 @@ class Session extends Nette\Object
 	 */
 	private function sendCookie()
 	{
-		$cookie = $this->getCookieParams();
+		$cookie = $this->getCookieParameters();
 		$this->response->setCookie(
 			session_name(), session_id(),
 			$cookie['lifetime'] ? $cookie['lifetime'] + time() : 0,

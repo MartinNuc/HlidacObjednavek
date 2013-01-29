@@ -1,26 +1,15 @@
 <?php
+use Nette\Utils\Strings;
 
-use Nette\Security as NS;
-
-
-/**
- * Users authenticator.
- *
- * @author     John Doe
- * @package    MyApplication
- */
-class Authenticator extends Nette\Object implements NS\IAuthenticator
+class Authenticator extends Nette\Object implements Nette\Security\IAuthenticator
 {
-	/** @var Nette\Database\Table\Selection */
-	private $users;
+	/** @var Nette\Database\Connection */
+        private $database;
 
-
-
-	public function __construct(Nette\Database\Table\Selection $users)
-	{
-		$this->users = $users;
-	}
-
+	public function __construct(DibiConnection $database)
+        {
+        $this->database = $database;
+        }
 
 	/**
 	 * Performs an authentication
@@ -31,14 +20,16 @@ class Authenticator extends Nette\Object implements NS\IAuthenticator
 	public function authenticate(array $credentials)
 	{
 		list($username, $password) = $credentials;
-		$row = $this->users->where('username', $username)->fetch();
+		$row = dibi::select('*')->from('users')->where('username = %s', $username)->fetch();
+                //$row = dibi::query("SELECT * FROM users WHERE username = %s", $username)->setRowClass('User');
+                //$row = $this->database->table('users')->where('username', $username)->fetch();
 
 		if (!$row) {
-			throw new NS\AuthenticationException("Špatná kombinace uživatelského jména a hesla.", self::IDENTITY_NOT_FOUND);
+			throw new Nette\Security\AuthenticationException("Špatná kombinace uživatelského jména a hesla.", self::IDENTITY_NOT_FOUND);
 		}
                 echo $this->calculateHash($password, $username);
 		if ($row->password !== $this->calculateHash($password, $username) || $row->disabled==1) {
-			throw new NS\AuthenticationException("Špatná kombinace uživatelského jména a hesla.", self::INVALID_CREDENTIAL);
+			throw new Nette\Security\AuthenticationException("Špatná kombinace uživatelského jména a hesla.", self::INVALID_CREDENTIAL);
 		}
 
 		unset($row->password);
@@ -48,7 +39,7 @@ class Authenticator extends Nette\Object implements NS\IAuthenticator
                     $row->role = "admin";
                 if ($row->role == "Host")
                     $row->role = "host";
-		return new NS\Identity($row->id_user, $row->role, $row->toArray());
+		return new Nette\Security\Identity($row->id_user, $row->role, $row->toArray());
 	}
 
 

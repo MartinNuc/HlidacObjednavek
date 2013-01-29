@@ -3,7 +3,7 @@
 /**
  * This file is part of the Nette Framework (http://nette.org)
  *
- * Copyright (c) 2004, 2011 David Grudl (http://davidgrudl.com)
+ * Copyright (c) 2004 David Grudl (http://davidgrudl.com)
  *
  * For the full copyright and license information, please view
  * the file license.txt that was distributed with this source code.
@@ -21,6 +21,9 @@ use Nette,
  * Represents a prepared statement / result set.
  *
  * @author     David Grudl
+ *
+ * @property-read Connection $connection
+ * @property-write $fetchMode
  */
 class Statement extends \PDOStatement
 {
@@ -28,7 +31,7 @@ class Statement extends \PDOStatement
 	private $connection;
 
 	/** @var float */
-	public $time;
+	private $time;
 
 	/** @var array */
 	private $types;
@@ -101,20 +104,7 @@ class Statement extends \PDOStatement
 	 */
 	public function normalizeRow($row)
 	{
-		if ($this->types === NULL) {
-			$this->types = array();
-			if ($this->connection->getSupplementalDriver()->supports['meta']) { // workaround for PHP bugs #53782, #54695
-				$col = 0;
-				foreach ($row as $key => $foo) {
-					$type = $this->getColumnMeta($col++);
-					if (isset($type['native_type'])) {
-						$this->types[$key] = static::detectType($type['native_type']);
-					}
-				}
-			}
-		}
-
-		foreach ($this->types as $key => $type) {
+		foreach ($this->detectColumnTypes() as $key => $type) {
 			$value = $row[$key];
 			if ($value === NULL || $value === FALSE || $type === IReflection::FIELD_TEXT) {
 
@@ -122,14 +112,48 @@ class Statement extends \PDOStatement
 				$row[$key] = is_float($tmp = $value * 1) ? $value : $tmp;
 
 			} elseif ($type === IReflection::FIELD_FLOAT) {
-				$row[$key] = (string) ($tmp = (float) $value) === $value ? $tmp : $value;
+				$value = strpos($value, '.') === FALSE ? $value : rtrim(rtrim($value, '0'), '.');
+				$float = (float) $value;
+				$row[$key] = (string) $float === $value ? $float : $value;
 
 			} elseif ($type === IReflection::FIELD_BOOL) {
 				$row[$key] = ((bool) $value) && $value !== 'f' && $value !== 'F';
+
+			} elseif ($type === IReflection::FIELD_DATETIME || $type === IReflection::FIELD_DATE || $type === IReflection::FIELD_TIME) {
+				$row[$key] = new Nette\DateTime($value);
+
 			}
 		}
 
 		return $this->connection->getSupplementalDriver()->normalizeRow($row, $this);
+	}
+
+
+
+	private function detectColumnTypes()
+	{
+		if ($this->types === NULL) {
+			$this->types = array();
+			if ($this->connection->getSupplementalDriver()->isSupported(ISupplementalDriver::SUPPORT_COLUMNS_META)) { // workaround for PHP bugs #53782, #54695
+				$col = 0;
+				while ($meta = $this->getColumnMeta($col++)) {
+					if (isset($meta['native_type'])) {
+						$this->types[$meta['name']] = Helpers::detectType($meta['native_type']);
+					}
+				}
+			}
+		}
+		return $this->types;
+	}
+
+
+
+	/**
+	 * @return float
+	 */
+	public function getTime()
+	{
+		return $this->time;
 	}
 
 
@@ -144,64 +168,7 @@ class Statement extends \PDOStatement
 	 */
 	public function dump()
 	{
-		echo "\n<table class=\"dump\">\n<caption>" . htmlSpecialChars($this->queryString) . "</caption>\n";
-		if (!$this->columnCount()) {
-			echo "\t<tr>\n\t\t<th>Affected rows:</th>\n\t\t<td>", $this->rowCount(), "</td>\n\t</tr>\n</table>\n";
-			return;
-		}
-		$i = 0;
-		foreach ($this as $row) {
-			if ($i === 0) {
-				echo "<thead>\n\t<tr>\n\t\t<th>#row</th>\n";
-				foreach ($row as $col => $foo) {
-					echo "\t\t<th>" . htmlSpecialChars($col) . "</th>\n";
-				}
-				echo "\t</tr>\n</thead>\n<tbody>\n";
-			}
-			echo "\t<tr>\n\t\t<th>", $i, "</th>\n";
-			foreach ($row as $col) {
-				//if (is_object($col)) $col = $col->__toString();
-				echo "\t\t<td>", htmlSpecialChars($col), "</td>\n";
-			}
-			echo "\t</tr>\n";
-			$i++;
-		}
-
-		if ($i === 0) {
-			echo "\t<tr>\n\t\t<td><em>empty result set</em></td>\n\t</tr>\n</table>\n";
-		} else {
-			echo "</tbody>\n</table>\n";
-		}
-	}
-
-
-
-	/**
-	 * Heuristic type detection.
-	 * @param  string
-	 * @return string
-	 * @internal
-	 */
-	public static function detectType($type)
-	{
-		static $types, $patterns = array(
-			'BYTEA|BLOB|BIN' => IReflection::FIELD_BINARY,
-			'TEXT|CHAR' => IReflection::FIELD_TEXT,
-			'YEAR|BYTE|COUNTER|SERIAL|INT|LONG' => IReflection::FIELD_INTEGER,
-			'CURRENCY|REAL|MONEY|FLOAT|DOUBLE|DECIMAL|NUMERIC|NUMBER' => IReflection::FIELD_FLOAT,
-			'TIME|DATE' => IReflection::FIELD_DATETIME,
-			'BOOL|BIT' => IReflection::FIELD_BOOL,
-		);
-
-		if (!isset($types[$type])) {
-			$types[$type] = 'string';
-			foreach ($patterns as $s => $val) {
-				if (preg_match("#$s#i", $type)) {
-					return $types[$type] = $val;
-				}
-			}
-		}
-		return $types[$type];
+		Helpers::dumpResult($this);
 	}
 
 

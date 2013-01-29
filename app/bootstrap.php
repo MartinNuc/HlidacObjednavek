@@ -1,9 +1,5 @@
 <?php
 
-/**
- * My Application bootstrap file.
- */
-
 use Nette\Diagnostics\Debugger, Nette\Application\Routers\Route;
 use Nette\Forms\Container;
 
@@ -16,14 +12,28 @@ Debugger::$logDirectory = __DIR__ . '/../log';
 Debugger::$strictMode = TRUE;
 Debugger::enable();
 
-require $params['libsDir'] . '/dibi/dibi.php';
+//require $params['libsDir'] . '/dibi/dibi.php';
 // Load configuration from config.neon file
-$configurator = new Nette\Configurator;
+/*$configurator = new Nette\Configurator;
 $configurator->container->params += $params;
 $configurator->container->params['tempDir'] = __DIR__ . '/../temp';
-$container = $configurator->loadConfig(__DIR__ . '/config.neon');
+$container = $configurator->loadConfig(__DIR__ . '/config.neon');*/
+
+$configurator = new Nette\Config\Configurator;
+$configurator->setTempDirectory(__DIR__ . '/../temp');
+$configurator->createRobotLoader()
+    ->addDirectory(__DIR__)
+    ->addDirectory($params['libsDir'])
+    ->register();
+$configurator->addParameters($params);
+$configurator->addConfig(__DIR__ . '/config.neon');
+$container = $configurator->createContainer();
 
 dibi::connect( $container->params['database'] );
+
+$configurator->onCompile[] = function ($configurator, $compiler) {
+    $compiler->addExtension('dibi', new DibiNetteExtension);
+};
 
 // Setup router
 $router = $container->router;

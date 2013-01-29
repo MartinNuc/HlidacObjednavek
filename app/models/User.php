@@ -7,7 +7,6 @@
  */
 class User extends DibiRow
 {
-
     public function __construct($arr = array())
     {
         parent::__construct($arr);

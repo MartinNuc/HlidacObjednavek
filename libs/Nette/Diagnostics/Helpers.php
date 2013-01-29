@@ -3,7 +3,7 @@
 /**
  * This file is part of the Nette Framework (http://nette.org)
  *
- * Copyright (c) 2004, 2011 David Grudl (http://davidgrudl.com)
+ * Copyright (c) 2004 David Grudl (http://davidgrudl.com)
  *
  * For the full copyright and license information, please view
  * the file license.txt that was distributed with this source code.
@@ -19,7 +19,6 @@ use Nette;
  * Rendering helpers for Debugger.
  *
  * @author     David Grudl
- * @internal
  */
 final class Helpers
 {
@@ -91,9 +90,9 @@ final class Helpers
 
 		} elseif (is_string($var)) {
 			if (Debugger::$maxLen && strlen($var) > Debugger::$maxLen) {
-				$s = htmlSpecialChars(substr($var, 0, Debugger::$maxLen), ENT_NOQUOTES) . ' ... ';
+				$s = htmlSpecialChars(substr($var, 0, Debugger::$maxLen), ENT_NOQUOTES, 'ISO-8859-1') . ' ... ';
 			} else {
-				$s = htmlSpecialChars($var, ENT_NOQUOTES);
+				$s = htmlSpecialChars($var, ENT_NOQUOTES, 'ISO-8859-1');
 			}
 			$s = strtr($s, preg_match($reBinary, $s) || preg_last_error() ? $tableBin : $tableUtf);
 			$len = strlen($var);
@@ -175,7 +174,19 @@ final class Helpers
 			return $s . "\n";
 
 		} elseif (is_resource($var)) {
-			return '<span class="php-resource">' . htmlSpecialChars(get_resource_type($var)) . " resource</span>\n";
+			$type = get_resource_type($var);
+			$s = '<span class="php-resource">' . htmlSpecialChars($type) . " resource</span> ";
+
+			static $info = array('stream' => 'stream_get_meta_data', 'curl' => 'curl_getinfo');
+			if (isset($info[$type])) {
+				$space = str_repeat($space1 = '   ', $level);
+				$s .= "<code>{\n";
+				foreach (call_user_func($info[$type], $var) as $k => $v) {
+					$s .= $space . $space1 . '<span class="php-key">' . htmlSpecialChars($k) . "</span> => " . self::htmlDump($v, $level + 1);
+				}
+				$s .= "$space}</code>";
+			}
+			return $s . "\n";
 
 		} else {
 			return "<span>unknown type</span>\n";
@@ -189,18 +200,34 @@ final class Helpers
 	 * @param  string
 	 * @return string
 	 */
-	public static function clickableDump($dump)
+	public static function clickableDump($dump, $collapsed = FALSE)
 	{
 		return '<pre class="nette-dump">' . preg_replace_callback(
-			'#^( *)((?>[^(]{1,200}))\((\d+)\) <code>#m',
-			function ($m) {
+			'#^( *)((?>[^(\r\n]{1,200}))\((\d+)\) <code>#m',
+			function($m) use ($collapsed) {
 				return "$m[1]<a href='#' rel='next'>$m[2]($m[3]) "
-					. (trim($m[1]) || $m[3] < 7
+					. (($m[1] || !$collapsed) && ($m[3] < 7)
 					? '<abbr>&#x25bc;</abbr> </a><code>'
 					: '<abbr>&#x25ba;</abbr> </a><code class="nette-collapsed">');
 			},
 			self::htmlDump($dump)
 		) . '</pre>';
+	}
+
+
+
+	public static function findTrace(array $trace, $method, & $index = NULL)
+	{
+		$m = explode('::', $method);
+		foreach ($trace as $i => $item) {
+			if (isset($item['function']) && $item['function'] === end($m)
+				&& isset($item['class']) === isset($m[1])
+				&& (!isset($item['class']) || $item['class'] === $m[0] || $m[0] === '*' || is_subclass_of($item['class'], $m[0]))
+			) {
+				$index = $i;
+				return $item;
+			}
+		}
 	}
 
 }

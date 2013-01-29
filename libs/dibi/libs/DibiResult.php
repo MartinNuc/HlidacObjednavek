@@ -1,26 +1,18 @@
 <?php
 
 /**
- * dibi - tiny'n'smart database abstraction layer
- * ----------------------------------------------
+ * This file is part of the "dibi" - smart database abstraction layer.
  *
- * Copyright (c) 2005, 2009 David Grudl (http://davidgrudl.com)
+ * Copyright (c) 2005 David Grudl (http://davidgrudl.com)
  *
- * This source file is subject to the "dibi license" that is bundled
- * with this package in the file license.txt.
- *
- * For more information please see http://dibiphp.com
- *
- * @copyright  Copyright (c) 2005, 2009 David Grudl
- * @license    http://dibiphp.com/license  dibi license
- * @link       http://dibiphp.com
- * @package    dibi
+ * For the full copyright and license information, please view
+ * the file license.txt that was distributed with this source code.
  */
 
 
 
 /**
- * dibi result-set.
+ * dibi result set.
  *
  * <code>
  * $result = dibi::query('SELECT * FROM [table]');
@@ -36,16 +28,22 @@
  * </code>
  *
  * @author     David Grudl
- * @copyright  Copyright (c) 2005, 2009 David Grudl
  * @package    dibi
+ *
+ * @property-read mixed $resource
+ * @property-read IDibiResultDriver $driver
+ * @property-read int $rowCount
+ * @property-read DibiResultIterator $iterator
+ * @property string $rowClass
+ * @property-read DibiResultInfo $info
  */
 class DibiResult extends DibiObject implements IDataSource
 {
-	/** @var array  IDibiDriver */
+	/** @var array  IDibiResultDriver */
 	private $driver;
 
 	/** @var array  Translate table */
-	private $xlat;
+	private $types = array();
 
 	/** @var DibiResultInfo */
 	private $meta;
@@ -53,36 +51,31 @@ class DibiResult extends DibiObject implements IDataSource
 	/** @var bool  Already fetched? Used for allowance for first seek(0) */
 	private $fetched = FALSE;
 
-	/** @var array|FALSE  Qualifiy each column name with the table name? */
-	private $withTables = FALSE;
-
 	/** @var string  returned object class */
-	private $class = 'DibiRow';
+	private $rowClass = 'DibiRow';
+
+	/** @var array  format */
+	private $formats = array();
 
 
 
 	/**
-	 * @param  IDibiDriver
-	 * @param  array
+	 * @param  IDibiResultDriver
 	 */
-	public function __construct($driver, $config)
+	public function __construct($driver)
 	{
 		$this->driver = $driver;
-
-		if (!empty($config[dibi::RESULT_WITH_TABLES])) {
-			$this->setWithTables(TRUE);
-		}
+		$this->detectTypes();
 	}
 
 
 
 	/**
-	 * Returns the result set resource.
-	 * @return mixed
+	 * @deprecated
 	 */
 	final public function getResource()
 	{
-		return $this->getDriver()->getResultResource();
+		return $this->getResultDriver()->getResultResource();
 	}
 
 
@@ -103,13 +96,13 @@ class DibiResult extends DibiObject implements IDataSource
 
 	/**
 	 * Safe access to property $driver.
-	 * @return IDibiDriver
-	 * @throws InvalidStateException
+	 * @return IDibiResultDriver
+	 * @throws RuntimeException
 	 */
-	private function getDriver()
+	final public function getResultDriver()
 	{
 		if ($this->driver === NULL) {
-			throw new InvalidStateException('Result-set was released from memory.');
+			throw new RuntimeException('Result-set was released from memory.');
 		}
 
 		return $this->driver;
@@ -129,7 +122,7 @@ class DibiResult extends DibiObject implements IDataSource
 	 */
 	final public function seek($row)
 	{
-		return ($row !== 0 || $this->fetched) ? (bool) $this->getDriver()->seek($row) : TRUE;
+		return ($row !== 0 || $this->fetched) ? (bool) $this->getResultDriver()->seek($row) : TRUE;
 	}
 
 
@@ -140,7 +133,7 @@ class DibiResult extends DibiObject implements IDataSource
 	 */
 	final public function count()
 	{
-		return $this->getDriver()->getRowCount();
+		return $this->getResultDriver()->getRowCount();
 	}
 
 
@@ -151,7 +144,7 @@ class DibiResult extends DibiObject implements IDataSource
 	 */
 	final public function getRowCount()
 	{
-		return $this->getDriver()->getRowCount();
+		return $this->getResultDriver()->getRowCount();
 	}
 
 
@@ -162,20 +155,22 @@ class DibiResult extends DibiObject implements IDataSource
 	 */
 	final public function rowCount()
 	{
-		return $this->getDriver()->getRowCount();
+		trigger_error(__METHOD__ . '() is deprecated; use count($res) or $res->getRowCount() instead.', E_USER_WARNING);
+		return $this->getResultDriver()->getRowCount();
 	}
 
 
 
 	/**
 	 * Required by the IteratorAggregate interface.
-	 * @param  int  offset
-	 * @param  int  limit
 	 * @return DibiResultIterator
 	 */
-	final public function getIterator($offset = NULL, $limit = NULL)
+	final public function getIterator()
 	{
-		return new DibiResultIterator($this, $offset, $limit);
+		if (func_num_args()) {
+			trigger_error(__METHOD__ . ' arguments $offset & $limit have been dropped; use SQL clauses instead.', E_USER_WARNING);
+		}
+		return new DibiResultIterator($this);
 	}
 
 
@@ -191,7 +186,7 @@ class DibiResult extends DibiObject implements IDataSource
 	 */
 	public function setRowClass($class)
 	{
-		$this->class = $class;
+		$this->rowClass = $class;
 		return $this;
 	}
 
@@ -203,7 +198,7 @@ class DibiResult extends DibiObject implements IDataSource
 	 */
 	public function getRowClass()
 	{
-		return $this->class;
+		return $this->rowClass;
 	}
 
 
@@ -215,28 +210,16 @@ class DibiResult extends DibiObject implements IDataSource
 	 */
 	final public function fetch()
 	{
-		if ($this->withTables === FALSE) {
-			$row = $this->getDriver()->fetch(TRUE);
-			if (!is_array($row)) return FALSE;
-
-		} else {
-			$row = $this->getDriver()->fetch(FALSE);
-			if (!is_array($row)) return FALSE;
-			$row = array_combine($this->withTables, $row);
+		$row = $this->getResultDriver()->fetch(TRUE);
+		if (!is_array($row)) {
+			return FALSE;
 		}
-
 		$this->fetched = TRUE;
-
-		// types-converting?
-		if ($this->xlat !== NULL) {
-			foreach ($this->xlat as $col => $type) {
-				if (isset($row[$col])) {
-					$row[$col] = $this->convert($row[$col], $type['type'], $type['format']);
-				}
-			}
+		$this->normalize($row);
+		if ($this->rowClass) {
+			$row = new $this->rowClass($row);
 		}
-
-		return new $this->class($row);
+		return $row;
 	}
 
 
@@ -247,19 +230,13 @@ class DibiResult extends DibiObject implements IDataSource
 	 */
 	final public function fetchSingle()
 	{
-		$row = $this->getDriver()->fetch(TRUE);
-		if (!is_array($row)) return FALSE;
-		$this->fetched = TRUE;
-		$value = reset($row);
-
-		// types-converting?
-		$key = key($row);
-		if (isset($this->xlat[$key])) {
-			$type = $this->xlat[$key];
-			return $this->convert($value, $type['type'], $type['format']);
+		$row = $this->getResultDriver()->fetch(TRUE);
+		if (!is_array($row)) {
+			return FALSE;
 		}
-
-		return $value;
+		$this->fetched = TRUE;
+		$this->normalize($row);
+		return reset($row);
 	}
 
 
@@ -291,13 +268,87 @@ class DibiResult extends DibiObject implements IDataSource
 
 	/**
 	 * Fetches all records from table and returns associative tree.
-	 * Associative descriptor:  assoc1,#,assoc2,=,assoc3,@
-	 * builds a tree:           $data[assoc1][index][assoc2]['assoc3']->value = {record}
+	 * Examples:
+	 * - associative descriptor: col1[]col2->col3
+	 *   builds a tree:          $tree[$val1][$index][$val2]->col3[$val3] = {record}
+	 * - associative descriptor: col1|col2->col3=col4
+	 *   builds a tree:          $tree[$val1][$val2]->col3[$val3] = val4
 	 * @param  string  associative descriptor
 	 * @return DibiRow
 	 * @throws InvalidArgumentException
 	 */
 	final public function fetchAssoc($assoc)
+	{
+		if (strpos($assoc, ',') !== FALSE) {
+			return $this->oldFetchAssoc($assoc);
+		}
+
+		$this->seek(0);
+		$row = $this->fetch();
+		if (!$row) return array();  // empty result set
+
+		$data = NULL;
+		$assoc = preg_split('#(\[\]|->|=|\|)#', $assoc, NULL, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY);
+
+		// check columns
+		foreach ($assoc as $as) {
+			// offsetExists ignores NULL in PHP 5.2.1, isset() surprisingly NULL accepts
+			if ($as !== '[]' && $as !== '=' && $as !== '->' && $as !== '|' && !property_exists($row, $as)) {
+				throw new InvalidArgumentException("Unknown column '$as' in associative descriptor.");
+			}
+		}
+
+		if ($as === '->') { // must not be last
+			array_pop($assoc);
+		}
+
+		if (empty($assoc)) {
+			$assoc[] = '[]';
+		}
+
+		// make associative tree
+		do {
+			$x = & $data;
+
+			// iterative deepening
+			foreach ($assoc as $i => $as) {
+				if ($as === '[]') { // indexed-array node
+					$x = & $x[];
+
+				} elseif ($as === '=') { // "value" node
+					$x = $row->{$assoc[$i+1]};
+					continue 2;
+
+				} elseif ($as === '->') { // "object" node
+					if ($x === NULL) {
+						$x = clone $row;
+						$x = & $x->{$assoc[$i+1]};
+						$x = NULL; // prepare child node
+					} else {
+						$x = & $x->{$assoc[$i+1]};
+					}
+
+				} elseif ($as !== '|') { // associative-array node
+					$x = & $x[$row->$as];
+				}
+			}
+
+			if ($x === NULL) { // build leaf
+				$x = $row;
+			}
+
+		} while ($row = $this->fetch());
+
+		unset($x);
+		return $data;
+	}
+
+
+
+	/**
+	 * @deprecated
+	 */
+	private function oldFetchAssoc($assoc)
 	{
 		$this->seek(0);
 		$row = $this->fetch();
@@ -305,14 +356,6 @@ class DibiResult extends DibiObject implements IDataSource
 
 		$data = NULL;
 		$assoc = explode(',', $assoc);
-
-		// check columns
-		foreach ($assoc as $as) {
-			// offsetExists ignores NULL in PHP 5.2.1, isset() surprisingly NULL accepts
-			if ($as !== '#' && $as !== '=' && $as !== '@' && !isset($row[$as])) {
-				throw new InvalidArgumentException("Unknown column '$as' in associative descriptor.");
-			}
-		}
 
 		// strip leading = and @
 		$leaf = '@';  // gap
@@ -328,19 +371,16 @@ class DibiResult extends DibiObject implements IDataSource
 			}
 		}
 
-		// make associative tree
 		do {
-			$arr = (array) $row;
 			$x = & $data;
 
-			// iterative deepening
 			foreach ($assoc as $i => $as) {
 				if ($as === '#') { // indexed-array node
 					$x = & $x[];
 
 				} elseif ($as === '=') { // "record" node
 					if ($x === NULL) {
-						$x = $arr;
+						$x = $row->toArray();
 						$x = & $x[ $assoc[$i+1] ];
 						$x = NULL; // prepare child node
 					} else {
@@ -358,13 +398,13 @@ class DibiResult extends DibiObject implements IDataSource
 
 
 				} else { // associative-array node
-					$x = & $x[ $arr[ $as ] ];
+					$x = & $x[$row->$as];
 				}
 			}
 
 			if ($x === NULL) { // build leaf
 				if ($leaf === '=') {
-					$x = $arr;
+					$x = $row->toArray();
 				} else {
 					$x = $row;
 				}
@@ -399,7 +439,7 @@ class DibiResult extends DibiObject implements IDataSource
 			}
 
 			// autodetect
-			$tmp = array_keys((array) $row);
+			$tmp = array_keys($row->toArray());
 			$key = $tmp[0];
 			if (count($row) < 2) { // indexed-array
 				do {
@@ -411,7 +451,7 @@ class DibiResult extends DibiObject implements IDataSource
 			$value = $tmp[1];
 
 		} else {
-			if (!isset($row[$value])) {
+			if (!property_exists($row, $value)) {
 				throw new InvalidArgumentException("Unknown value column '$value'.");
 			}
 
@@ -422,7 +462,7 @@ class DibiResult extends DibiObject implements IDataSource
 				return $data;
 			}
 
-			if (!isset($row[$key])) {
+			if (!property_exists($row, $key)) {
 				throw new InvalidArgumentException("Unknown key column '$key'.");
 			}
 		}
@@ -436,46 +476,70 @@ class DibiResult extends DibiObject implements IDataSource
 
 
 
-	/********************* meta info ****************d*g**/
+	/********************* column types ****************d*g**/
 
 
 
 	/**
-	 * Qualifiy each column name with the table name?
-	 * @param  bool
-	 * @return DibiResult  provides a fluent interface
-	 * @throws DibiException
+	 * Autodetect column types.
+	 * @return void
 	 */
-	final public function setWithTables($val)
+	private function detectTypes()
 	{
-		if ($val) {
-			$cols = array();
-			foreach ($this->getInfo()->getColumns() as $col) {
-				$name = $col->getFullname();
-				if (isset($cols[$name])) {
-					$fix = 1;
-					while (isset($cols[$name . '#' . $fix])) $fix++;
-					$name .= '#' . $fix;
-				}
-				$cols[$name] = TRUE;
+		$cache = DibiColumnInfo::getTypeCache();
+		try {
+			foreach ($this->getResultDriver()->getResultColumns() as $col) {
+				$this->types[$col['name']] = $cache->{$col['nativetype']};
 			}
-			$this->withTables = array_keys($cols);
-
-		} else {
-			$this->withTables = FALSE;
-		}
-		return $this;
+		} catch (DibiNotSupportedException $e) {}
 	}
 
 
 
 	/**
-	 * Qualifiy each key with the table name?
-	 * @return bool
+	 * Converts values to specified type and format.
+	 * @param  array
+	 * @return void
 	 */
-	final public function getWithTables()
+	private function normalize(array & $row)
 	{
-		return (bool) $this->withTables;
+		foreach ($this->types as $key => $type) {
+			if (!isset($row[$key])) { // NULL
+				continue;
+			}
+			$value = $row[$key];
+			if ($value === FALSE || $type === dibi::TEXT) {
+
+			} elseif ($type === dibi::INTEGER) {
+				$row[$key] = is_float($tmp = $value * 1) ? $value : $tmp;
+
+			} elseif ($type === dibi::FLOAT) {
+				$row[$key] = (string) ($tmp = (float) $value) === $value ? $tmp : $value;
+
+			} elseif ($type === dibi::BOOL) {
+				$row[$key] = ((bool) $value) && $value !== 'f' && $value !== 'F';
+
+			} elseif ($type === dibi::DATE || $type === dibi::DATETIME) {
+				if ((int) $value === 0) { // '', NULL, FALSE, '0000-00-00', ...
+
+				} elseif (empty($this->formats[$type])) { // return DateTime object (default)
+					$row[$key] = new DibiDateTime(is_numeric($value) ? date('Y-m-d H:i:s', $value) : $value);
+
+				} elseif ($this->formats[$type] === 'U') { // return timestamp
+					$row[$key] = is_numeric($value) ? (int) $value : strtotime($value);
+
+				} elseif (is_numeric($value)) { // formatted date
+					$row[$key] = date($this->formats[$type], $value);
+
+				} else {
+					$value = new DibiDateTime($value);
+					$row[$key] = $value->format($this->formats[$type]);
+				}
+
+			} elseif ($type === dibi::BINARY) {
+				$row[$key] = $this->getResultDriver()->unescape($value, $type);
+			}
+		}
 	}
 
 
@@ -484,39 +548,11 @@ class DibiResult extends DibiObject implements IDataSource
 	 * Define column type.
 	 * @param  string  column
 	 * @param  string  type (use constant Dibi::*)
-	 * @param  string  optional format
 	 * @return DibiResult  provides a fluent interface
 	 */
-	final public function setType($col, $type, $format = NULL)
+	final public function setType($col, $type)
 	{
-		$this->xlat[$col] = array('type' => $type, 'format' => $format);
-		return $this;
-	}
-
-
-
-	/**
-	 * Autodetect column types.
-	 * @return void
-	 */
-	final public function detectTypes()
-	{
-		foreach ($this->getInfo()->getColumns() as $col) {
-			$this->xlat[$col->getName()] = array('type' => $col->getType(), 'format' => NULL);
-		}
-	}
-
-
-
-	/**
-	 * Define multiple columns types.
-	 * @param  array
-	 * @return DibiResult  provides a fluent interface
-	 * @internal
-	 */
-	final public function setTypes(array $types)
-	{
-		$this->xlat = $types;
+		$this->types[$col] = $type;
 		return $this;
 	}
 
@@ -524,70 +560,41 @@ class DibiResult extends DibiObject implements IDataSource
 
 	/**
 	 * Returns column type.
-	 * @return array  ($type, $format)
+	 * @return string
 	 */
 	final public function getType($col)
 	{
-		return isset($this->xlat[$col]) ? $this->xlat[$col] : NULL;
+		return isset($this->types[$col]) ? $this->types[$col] : NULL;
 	}
 
 
 
 	/**
-	 * Converts value to specified type and format.
-	 * @param  mixed  value
-	 * @param  int    type
-	 * @param  string format
-	 * @return mixed
+	 * Sets data format.
+	 * @param  string  type (use constant Dibi::*)
+	 * @param  string  format
+	 * @return DibiResult  provides a fluent interface
 	 */
-	final public function convert($value, $type, $format = NULL)
+	final public function setFormat($type, $format)
 	{
-		if ($value === NULL || $value === FALSE) {
-			return NULL;
-		}
-
-		switch ($type) {
-		case dibi::TEXT:
-			return (string) $value;
-
-		case dibi::BINARY:
-			return $this->getDriver()->unescape($value, $type);
-
-		case dibi::INTEGER:
-			return (int) $value;
-
-		case dibi::FLOAT:
-			return (float) $value;
-
-		case dibi::DATE:
-		case dibi::DATETIME:
-			if ($value == NULL) { // intentionally ==
-				return NULL;
-
-			} elseif ($format === NULL) { // return timestamp (default)
-				return is_numeric($value) ? (int) $value : strtotime($value);
-
-			} elseif ($format === TRUE) { // return DateTime object
-				return new DateTime(is_numeric($value) ? date('Y-m-d H:i:s', $value) : $value);
-
-			} elseif (is_numeric($value)) { // single timestamp
-				return date($format, $value);
-
-			} elseif (class_exists('DateTime', FALSE)) { // since PHP 5.2
-				$value = new DateTime($value);
-				return $value ? $value->format($format) : NULL;
-
-			} else {
-				return date($format, strtotime($value));
-			}
-
-		case dibi::BOOL:
-			return ((bool) $value) && $value !== 'f' && $value !== 'F';
-
-		default:
-			return $value;
-		}
+		$this->formats[$type] = $format;
+		return $this;
 	}
+
+
+
+	/**
+	 * Returns data format.
+	 * @return string
+	 */
+	final public function getFormat($type)
+	{
+		return isset($this->formats[$type]) ? $this->formats[$type] : NULL;
+	}
+
+
+
+	/********************* meta info ****************d*g**/
 
 
 
@@ -598,7 +605,7 @@ class DibiResult extends DibiObject implements IDataSource
 	public function getInfo()
 	{
 		if ($this->meta === NULL) {
-			$this->meta = new DibiResultInfo($this->getDriver());
+			$this->meta = new DibiResultInfo($this->getResultDriver());
 		}
 		return $this->meta;
 	}
@@ -615,11 +622,10 @@ class DibiResult extends DibiObject implements IDataSource
 
 
 
-	/**
-	 * @deprecated
-	 */
+	/** @deprecated */
 	public function getColumnNames($fullNames = FALSE)
 	{
+		trigger_error(__METHOD__ . '() is deprecated; use $res->getInfo()->getColumnNames() instead.', E_USER_WARNING);
 		return $this->getInfo()->getColumnNames($fullNames);
 	}
 
@@ -630,7 +636,7 @@ class DibiResult extends DibiObject implements IDataSource
 
 
 	/**
-	 * Displays complete result-set as HTML table for debug purposes.
+	 * Displays complete result set as HTML table for debug purposes.
 	 * @return void
 	 */
 	final public function dump()

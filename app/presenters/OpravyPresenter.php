@@ -68,7 +68,7 @@ class OpravyPresenter extends BasePresenter {
     public function createComponentPridatPolozku($name)
     {
         $form = new Form($this, $name);
-        $form->addText('pocet', 'Počet')->setAttribute('autoComplete', "off")->addRule(Form::FILLED, 'Zadejte počet.')->addRule(Form::INTEGER, 'Zadejte číslo.');
+        $form->addText('pocet', 'Počet')->setAttribute('autoComplete', "off")->addRule(Form::FILLED, 'Zadejte počet.')->addRule(Form::FLOAT, 'Zadejte číslo.');
         $form->addText('popis', 'Popis')->setAttribute('autoComplete', "off")->addRule(Form::FILLED, 'Zadejte popis.');
         $form->addText('cena', 'Cena')->setAttribute('autoComplete', "off")->addRule(Form::FILLED, 'Zadejte cenu.')->addRule(Form::FLOAT, 'Zadejte číslo.');
         $form->addCheckbox('placene_zakaznikem', 'Placeno zákazníkem');

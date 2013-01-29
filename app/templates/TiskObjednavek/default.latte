@@ -12,7 +12,13 @@ Datum: {$objednavka->formatovane_datum}
 <p>
 Oblast: {$objednavka->oblast_nazev}<br/>
 Zákazník: {$objednavka->zakaznik_nazev}<br/>
-IČ: {$zakaznik->ico}
+IČ: {$zakaznik->ico}<br/>
+{if $zakaznik->cislo_zakaznika != NULL || $zakaznik->cislo_zakaznika != ""}
+    Číslo zákazníka: {$zakaznik->cislo_zakaznika}<br/>
+{/if}
+{if $zakaznik->fakturacni_cislo != NULL || $zakaznik->fakturacni_cislo != ""}
+    Fakturační číslo: {$zakaznik->fakturacni_cislo}<br/>
+{/if}
 </p>
 <table class="table">
     <thead>

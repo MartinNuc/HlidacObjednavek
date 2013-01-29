@@ -220,14 +220,18 @@ class TiskObjednavekPresenter extends BasePresenter {
         $this->template->objednavky = $this->model->getObjednavkyTisk($temp);
         
         $zakaznik = new Zakaznik();
-        $this->template->zakaznik = array();
+        $this->template->zakaznik_ico = array();
+        $this->template->zakaznik_fakturacni_cislo = array();
+        $this->template->zakaznik_cislo_zakaznika = array();
         $this->template->zbozi = array();
         $this->template->kontakty = array();
         foreach ($this->template->objednavky as $obj)
         {
             $zakaznik->id_zakaznik = $obj->id_zakaznik;
             $zakaznik->fetch();
-            $this->template->zakaznik[$obj->id_objednavka] = $zakaznik->ico;
+            $this->template->zakaznik_ico[$obj->id_objednavka] = $zakaznik->ico;
+            $this->template->zakaznik_fakturacni_cislo[$obj->id_objednavka] = $zakaznik->fakturacni_cislo;
+            $this->template->zakaznik_cislo_zakaznika[$obj->id_objednavka] = $zakaznik->cislo_zakaznika;
             $this->template->kontakty[$obj->id_objednavka] = $this->kontaktyModel->getKontaktyInContext(NULL, array("vyrobni_cislo" => $obj->hledani_vyrobni_cislo));
             
             $this->template->zbozi[$obj->id_objednavka] = $obj->getZbozi();

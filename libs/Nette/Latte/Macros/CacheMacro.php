@@ -3,7 +3,7 @@
 /**
  * This file is part of the Nette Framework (http://nette.org)
  *
- * Copyright (c) 2004, 2011 David Grudl (http://davidgrudl.com)
+ * Copyright (c) 2004 David Grudl (http://davidgrudl.com)
  *
  * For the full copyright and license information, please view
  * the file license.txt that was distributed with this source code.
@@ -54,13 +54,13 @@ class CacheMacro extends Nette\Object implements Latte\IMacro
 
 	/**
 	 * New node is found.
-	 * @return bool|string
+	 * @return bool
 	 */
 	public function nodeOpened(Latte\MacroNode $node)
 	{
 		$this->used = TRUE;
 		$node->isEmpty = FALSE;
-		return Latte\PhpWriter::using($node)
+		$node->openingCode = Latte\PhpWriter::using($node)
 			->write('<?php if (Nette\Latte\Macros\CacheMacro::createCache($netteCacheStorage, %var, $_g->caches, %node.array?)) { ?>',
 				Nette\Utils\Strings::random()
 			);
@@ -70,11 +70,11 @@ class CacheMacro extends Nette\Object implements Latte\IMacro
 
 	/**
 	 * Node is closed.
-	 * @return string
+	 * @return void
 	 */
 	public function nodeClosed(Latte\MacroNode $node)
 	{
-		return '<?php $_l->tmp = array_pop($_g->caches); if (!$_l->tmp instanceof stdClass) $_l->tmp->end(); } ?>';
+		$node->closingCode = '<?php $_l->tmp = array_pop($_g->caches); if (!$_l->tmp instanceof stdClass) $_l->tmp->end(); } ?>';
 	}
 
 
@@ -84,10 +84,9 @@ class CacheMacro extends Nette\Object implements Latte\IMacro
 
 
 	/**
-	 * @param  Nette\Templating\ITemplate
 	 * @return void
 	 */
-	public static function initRuntime($template, $global)
+	public static function initRuntime(Nette\Templating\FileTemplate $template, \stdClass $global)
 	{
 		if (!empty($global->caches)) {
 			end($global->caches)->dependencies[Nette\Caching\Cache::FILES][] = $template->getFile();
@@ -100,15 +99,15 @@ class CacheMacro extends Nette\Object implements Latte\IMacro
 	 * Starts the output cache. Returns Nette\Caching\OutputHelper object if buffering was started.
 	 * @param  Nette\Caching\IStorage
 	 * @param  string
-	 * @param  array of Nette\Caching\OutputHelper
+	 * @param  Nette\Caching\OutputHelper[]
 	 * @param  array
 	 * @return Nette\Caching\OutputHelper
 	 */
-	public static function createCache(Nette\Caching\IStorage $cacheStorage, $key, & $parents, $args = NULL)
+	public static function createCache(Nette\Caching\IStorage $cacheStorage, $key, & $parents, array $args = NULL)
 	{
 		if ($args) {
 			if (array_key_exists('if', $args) && !$args['if']) {
-				return $parents[] = (object) NULL;
+				return $parents[] = new \stdClass;
 			}
 			$key = array_merge(array($key), array_intersect_key($args, range(0, count($args))));
 		}
@@ -118,9 +117,12 @@ class CacheMacro extends Nette\Object implements Latte\IMacro
 
 		$cache = new Nette\Caching\Cache($cacheStorage, 'Nette.Templating.Cache');
 		if ($helper = $cache->start($key)) {
+			if (isset($args['expire'])) {
+				$args['expiration'] = $args['expire']; // back compatibility
+			}
 			$helper->dependencies = array(
 				Nette\Caching\Cache::TAGS => isset($args['tags']) ? $args['tags'] : NULL,
-				Nette\Caching\Cache::EXPIRATION => isset($args['expire']) ? $args['expire'] : '+ 7 days',
+				Nette\Caching\Cache::EXPIRATION => isset($args['expiration']) ? $args['expiration'] : '+ 7 days',
 			);
 			$parents[] = $helper;
 		}

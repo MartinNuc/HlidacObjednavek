@@ -3,7 +3,7 @@
 /**
  * This file is part of the Nette Framework (http://nette.org)
  *
- * Copyright (c) 2004, 2011 David Grudl (http://davidgrudl.com)
+ * Copyright (c) 2004 David Grudl (http://davidgrudl.com)
  *
  * For the full copyright and license information, please view
  * the file license.txt that was distributed with this source code.
@@ -29,7 +29,7 @@ class RequestFactory extends Nette\Object
 	/** @var array */
 	public $urlFilters = array(
 		'path' => array('#/{2,}#' => '/'), // '%20' => ''
-		'url' => array(), // '#[.,)]$#' => ''
+		'url' => array(), // '#[.,)]\z#' => ''
 	);
 
 	/** @var string */
@@ -57,7 +57,7 @@ class RequestFactory extends Nette\Object
 	{
 		// DETECTS URI, base path and script path of the request.
 		$url = new UrlScript;
-		$url->scheme = isset($_SERVER['HTTPS']) && strcasecmp($_SERVER['HTTPS'], 'off') ? 'https' : 'http';
+		$url->scheme = !empty($_SERVER['HTTPS']) && strcasecmp($_SERVER['HTTPS'], 'off') ? 'https' : 'http';
 		$url->user = isset($_SERVER['PHP_AUTH_USER']) ? $_SERVER['PHP_AUTH_USER'] : '';
 		$url->password = isset($_SERVER['PHP_AUTH_PW']) ? $_SERVER['PHP_AUTH_PW'] : '';
 
@@ -72,7 +72,7 @@ class RequestFactory extends Nette\Object
 			$pair = array('');
 		}
 
-		$url->host = preg_match('#^[-._a-z0-9]+$#', $pair[0]) ? $pair[0] : '';
+		$url->host = preg_match('#^[-._a-z0-9]+\z#', $pair[0]) ? $pair[0] : '';
 
 		if (isset($pair[1])) {
 			$url->port = (int) $pair[1];
@@ -104,26 +104,26 @@ class RequestFactory extends Nette\Object
 		$url->path = Strings::fixEncoding($url->path);
 
 		// detect script path
-		if (isset($_SERVER['DOCUMENT_ROOT'], $_SERVER['SCRIPT_FILENAME'])
+		if (isset($_SERVER['SCRIPT_NAME'])) {
+			$script = $_SERVER['SCRIPT_NAME'];
+		} elseif (isset($_SERVER['DOCUMENT_ROOT'], $_SERVER['SCRIPT_FILENAME'])
 			&& strncmp($_SERVER['DOCUMENT_ROOT'], $_SERVER['SCRIPT_FILENAME'], strlen($_SERVER['DOCUMENT_ROOT'])) === 0
 		) {
 			$script = '/' . ltrim(strtr(substr($_SERVER['SCRIPT_FILENAME'], strlen($_SERVER['DOCUMENT_ROOT'])), '\\', '/'), '/');
-		} elseif (isset($_SERVER['SCRIPT_NAME'])) {
-			$script = $_SERVER['SCRIPT_NAME'];
 		} else {
 			$script = '/';
 		}
 
-		if (strncasecmp($url->path . '/', $script . '/', strlen($script) + 1) === 0) { // whole script in URL
-			$url->scriptPath = substr($url->path, 0, strlen($script));
-
-		} elseif (strncasecmp($url->path, $script, strrpos($script, '/') + 1) === 0) { // directory part of script in URL
-			$url->scriptPath = substr($url->path, 0, strrpos($script, '/') + 1);
-
-		} else {
-			$url->scriptPath = '/';
+		$path = strtolower($url->path) . '/';
+		$script = strtolower($script) . '/';
+		$max = min(strlen($path), strlen($script));
+		for ($i = 0; $i < $max; $i++) {
+			if ($path[$i] !== $script[$i]) {
+				break;
+			} elseif ($path[$i] === '/') {
+				$url->scriptPath = substr($url->path, 0, $i + 1);
+			}
 		}
-
 
 		// GET, POST, COOKIE
 		$useFilter = (!in_array(ini_get('filter.default'), array('', 'unsafe_raw')) || ini_get('filter.default_flags'));
@@ -135,7 +135,7 @@ class RequestFactory extends Nette\Object
 		$post = $useFilter ? filter_input_array(INPUT_POST, FILTER_UNSAFE_RAW) : (empty($_POST) ? array() : $_POST);
 		$cookies = $useFilter ? filter_input_array(INPUT_COOKIE, FILTER_UNSAFE_RAW) : (empty($_COOKIE) ? array() : $_COOKIE);
 
-		$gpc = (bool) @get_magic_quotes_gpc(); // @ - deprecated since PHP 5.4.0
+		$gpc = (bool) get_magic_quotes_gpc();
 		$old = error_reporting(error_reporting() ^ E_NOTICE);
 
 		// remove fucking quotes and check (and optionally convert) encoding
@@ -181,7 +181,7 @@ class RequestFactory extends Nette\Object
 		}
 
 
-		// FILES and create HttpUploadedFile objects
+		// FILES and create FileUpload objects
 		$files = array();
 		$list = array();
 		if (!empty($_FILES)) {

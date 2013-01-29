@@ -3,7 +3,7 @@
 /**
  * This file is part of the Nette Framework (http://nette.org)
  *
- * Copyright (c) 2004, 2011 David Grudl (http://davidgrudl.com)
+ * Copyright (c) 2004 David Grudl (http://davidgrudl.com)
  *
  * For the full copyright and license information, please view
  * the file license.txt that was distributed with this source code.
@@ -162,7 +162,7 @@ final class Arrays
 
 
 	/**
-	 * Return array entries that match the pattern.
+	 * Returns array entries that match the pattern.
 	 * @param  array
 	 * @param  string
 	 * @param  int
@@ -170,9 +170,29 @@ final class Arrays
 	 */
 	public static function grep(array $arr, $pattern, $flags = 0)
 	{
-		Nette\Diagnostics\Debugger::tryError();
+		set_error_handler(function($severity, $message) use ($pattern) { // preg_last_error does not return compile errors
+			restore_error_handler();
+			throw new RegexpException("$message in pattern: $pattern");
+		});
 		$res = preg_grep($pattern, $arr, $flags);
-		Strings::catchPregError($pattern);
+		restore_error_handler();
+		if (preg_last_error()) { // run-time error
+			throw new RegexpException(NULL, preg_last_error(), $pattern);
+		}
+		return $res;
+	}
+
+
+
+	/**
+	 * Returns flattened array.
+	 * @param  array
+	 * @return array
+	 */
+	public static function flatten(array $arr)
+	{
+		$res = array();
+		array_walk_recursive($arr, function($a) use (& $res) { $res[] = $a; });
 		return $res;
 	}
 

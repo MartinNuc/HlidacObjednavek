@@ -1,7 +1,6 @@
 <?php
 
-use Nette\Application\UI,
-	Nette\Security as NS;
+use Nette\Application\UI;
 
 /**
  * Sign in/out presenters.
@@ -39,15 +38,15 @@ class SignPresenter extends BasePresenter
 	{
 		try {
 			$values = $form->getValues();
-			if ($values->remember) {
+			/*if ($values->remember) {
 				$this->getUser()->setExpiration('+ 14 days', FALSE);
 			} else {
 				$this->getUser()->setExpiration('+ 1 day', TRUE);
-			}
+			}*/
 			$this->getUser()->login($values->username, $values->password);
 			$this->redirect('Hlidac:default');
 
-		} catch (NS\AuthenticationException $e) {
+		} catch (Nette\Security\AuthenticationException $e) {
 			$form->addError($e->getMessage());
                         $this->redirect('Sign:in');
 		}

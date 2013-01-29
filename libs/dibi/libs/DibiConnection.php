@@ -1,20 +1,12 @@
 <?php
 
 /**
- * dibi - tiny'n'smart database abstraction layer
- * ----------------------------------------------
+ * This file is part of the "dibi" - smart database abstraction layer.
  *
- * Copyright (c) 2005, 2009 David Grudl (http://davidgrudl.com)
+ * Copyright (c) 2005 David Grudl (http://davidgrudl.com)
  *
- * This source file is subject to the "dibi license" that is bundled
- * with this package in the file license.txt.
- *
- * For more information please see http://dibiphp.com
- *
- * @copyright  Copyright (c) 2005, 2009 David Grudl
- * @license    http://dibiphp.com/license  dibi license
- * @link       http://dibiphp.com
- * @package    dibi
+ * For the full copyright and license information, please view
+ * the file license.txt that was distributed with this source code.
  */
 
 
@@ -23,60 +15,81 @@
  * dibi connection.
  *
  * @author     David Grudl
- * @copyright  Copyright (c) 2005, 2009 David Grudl
  * @package    dibi
+ *
+ * @property-read bool $connected
+ * @property-read mixed $config
+ * @property-read IDibiDriver $driver
+ * @property-read int $affectedRows
+ * @property-read int $insertId
+ * @property-read DibiDatabaseInfo $databaseInfo
  */
 class DibiConnection extends DibiObject
 {
+	/** @var array of function(DibiEvent $event); Occurs after query is executed */
+	public $onEvent;
+
 	/** @var array  Current connection configuration */
 	private $config;
 
-	/** @var IDibiDriver  Driver */
+	/** @var IDibiDriver */
 	private $driver;
 
-	/** @var IDibiProfiler  Profiler */
-	private $profiler;
+	/** @var DibiTranslator */
+	private $translator;
 
 	/** @var bool  Is connected? */
 	private $connected = FALSE;
 
-	/** @var bool  Is in transaction? */
-	private $inTxn = FALSE;
+	/** @var DibiHashMap Substitutes for identifiers */
+	private $substitutes;
 
 
 
 	/**
-	 * Creates object and (optionally) connects to a database.
-	 * @param  array|string|ArrayObject connection parameters
-	 * @param  string       connection name
+	 * Connection options: (see driver-specific options too)
+	 *   - lazy (bool) => if TRUE, connection will be established only when required
+	 *   - result (array) => result set options
+	 *       - formatDateTime => date-time format (if empty, DateTime objects will be returned)
+	 *   - profiler (array or bool)
+	 *       - run (bool) => enable profiler?
+	 *       - file => file to log
+	 *   - substitutes (array) => map of driver specific substitutes (under development)
+
+	 * @param  mixed   connection parameters
+	 * @param  string  connection name
 	 * @throws DibiException
 	 */
 	public function __construct($config, $name = NULL)
 	{
-		if (class_exists(/*Nette\*/'Debug', FALSE)) {
-			/*Nette\*/Debug::addColophon(array('dibi', 'getColophon'));
-		}
+		class_exists('dibi'); // ensure class dibi is loaded
 
 		// DSN string
 		if (is_string($config)) {
 			parse_str($config, $config);
 
-		} elseif ($config instanceof ArrayObject) {
-			$config = (array) $config;
+		} elseif ($config instanceof Traversable) {
+			$tmp = array();
+			foreach ($config as $key => $val) {
+				$tmp[$key] = $val instanceof Traversable ? iterator_to_array($val) : $val;
+			}
+			$config = $tmp;
 
 		} elseif (!is_array($config)) {
-			throw new InvalidArgumentException('Configuration must be array, string or ArrayObject.');
+			throw new InvalidArgumentException('Configuration must be array, string or object.');
 		}
 
 		self::alias($config, 'username', 'user');
 		self::alias($config, 'password', 'pass');
 		self::alias($config, 'host', 'hostname');
+		self::alias($config, 'result|formatDate', 'resultDate');
+		self::alias($config, 'result|formatDateTime', 'resultDateTime');
 
 		if (!isset($config['driver'])) {
 			$config['driver'] = dibi::$defaultDriver;
 		}
 
-		$driver = preg_replace('#[^a-z0-9_]#', '_', $config['driver']);
+		$driver = preg_replace('#[^a-z0-9_]#', '_', strtolower($config['driver']));
 		$class = "Dibi" . $driver . "Driver";
 		if (!class_exists($class, FALSE)) {
 			include_once dirname(__FILE__) . "/../drivers/$driver.php";
@@ -89,21 +102,34 @@ class DibiConnection extends DibiObject
 		$config['name'] = $name;
 		$this->config = $config;
 		$this->driver = new $class;
+		$this->translator = new DibiTranslator($this);
 
-		if (!empty($config['profiler'])) {
-			$class = $config['profiler'];
-			if (is_numeric($class) || is_bool($class)) {
-				$class = 'DibiProfiler';
+		// profiler
+		$profilerCfg = & $config['profiler'];
+		if (is_scalar($profilerCfg)) {
+			$profilerCfg = array('run' => (bool) $profilerCfg);
+		}
+		if (!empty($profilerCfg['run'])) {
+			$filter = isset($profilerCfg['filter']) ? $profilerCfg['filter'] : DibiEvent::QUERY;
+
+			if (isset($profilerCfg['file'])) {
+				$this->onEvent[] = array(new DibiFileLogger($profilerCfg['file'], $filter), 'logEvent');
 			}
-			if (!class_exists($class)) {
-				throw new DibiException("Unable to create instance of dibi profiler '$class'.");
+
+			if (DibiFirePhpLogger::isAvailable()) {
+				$this->onEvent[] = array(new DibiFirePhpLogger($filter), 'logEvent');
 			}
-			$this->setProfiler(new $class);
+
+			if (class_exists('DibiNettePanel', FALSE)) {
+				$panel = new DibiNettePanel(isset($profilerCfg['explain']) ? $profilerCfg['explain'] : TRUE, $filter);
+				$panel->register($this);
+			}
 		}
 
+		$this->substitutes = new DibiHashMap(create_function('$expr', 'return ":$expr:";'));
 		if (!empty($config['substitutes'])) {
 			foreach ($config['substitutes'] as $key => $value) {
-				dibi::addSubst($key, $value);
+				$this->substitutes->$key = $value;
 			}
 		}
 
@@ -121,7 +147,7 @@ class DibiConnection extends DibiObject
 	public function __destruct()
 	{
 		// disconnects and rolls back transaction - do not rely on auto-disconnect and rollback!
-		$this->disconnect();
+		$this->connected && $this->driver->getResource() && $this->disconnect();
 	}
 
 
@@ -130,17 +156,17 @@ class DibiConnection extends DibiObject
 	 * Connects to a database.
 	 * @return void
 	 */
-	final protected function connect()
+	final public function connect()
 	{
-		if (!$this->connected) {
-			if ($this->profiler !== NULL) {
-				$ticket = $this->profiler->before($this, IDibiProfiler::CONNECT);
-			}
+		$event = $this->onEvent ? new DibiEvent($this, DibiEvent::CONNECT) : NULL;
+		try {
 			$this->driver->connect($this->config);
 			$this->connected = TRUE;
-			if (isset($ticket)) {
-				$this->profiler->after($ticket);
-			}
+			$event && $this->onEvent($event->done());
+
+		} catch (DibiException $e) {
+			$event && $this->onEvent($event->done($e));
+			throw $e;
 		}
 	}
 
@@ -152,13 +178,8 @@ class DibiConnection extends DibiObject
 	 */
 	final public function disconnect()
 	{
-		if ($this->connected) {
-			if ($this->inTxn) {
-				$this->rollback();
-			}
-			$this->driver->disconnect();
-			$this->connected = FALSE;
-		}
+		$this->driver->disconnect();
+		$this->connected = FALSE;
 	}
 
 
@@ -203,40 +224,27 @@ class DibiConnection extends DibiObject
 	 * @param  string alias key
 	 * @return void
 	 */
-	public static function alias(&$config, $key, $alias=NULL)
+	public static function alias(&$config, $key, $alias)
 	{
-		if (isset($config[$key])) return;
+		$foo = & $config;
+		foreach (explode('|', $key) as $key) $foo = & $foo[$key];
 
-		if ($alias !== NULL && isset($config[$alias])) {
-			$config[$key] = $config[$alias];
+		if (!isset($foo) && isset($config[$alias])) {
+			$foo = $config[$alias];
 			unset($config[$alias]);
-		} else {
-			$config[$key] = NULL;
 		}
 	}
 
 
 
 	/**
-	 * Returns the connection resource.
+	 * Returns the driver and connects to a database in lazy mode.
 	 * @return IDibiDriver
 	 */
 	final public function getDriver()
 	{
+		$this->connected || $this->connect();
 		return $this->driver;
-	}
-
-
-
-	/**
-	 * Returns the connection resource.
-	 * @return resource
-	 * @deprecated use getDriver()->getResource()
-	 */
-	final public function getResource()
-	{
-		trigger_error('Deprecated: use getDriver()->getResource(...) instead.', E_USER_WARNING);
-		return $this->driver->getResource();
 	}
 
 
@@ -250,25 +258,21 @@ class DibiConnection extends DibiObject
 	final public function query($args)
 	{
 		$args = func_get_args();
-		$this->connect();
-		$translator = new DibiTranslator($this->driver);
-		return $this->nativeQuery($translator->translate($args));
+		return $this->nativeQuery($this->translateArgs($args));
 	}
 
 
 
 	/**
-	 * Generates and returns SQL query.
+	 * Generates SQL query.
 	 * @param  array|mixed      one or more arguments
 	 * @return string
 	 * @throws DibiException
 	 */
-	final public function sql($args)
+	final public function translate($args)
 	{
 		$args = func_get_args();
-		$this->connect();
-		$translator = new DibiTranslator($this->driver);
-		return $translator->translate($args);
+		return $this->translateArgs($args);
 	}
 
 
@@ -281,14 +285,16 @@ class DibiConnection extends DibiObject
 	final public function test($args)
 	{
 		$args = func_get_args();
-		$this->connect();
 		try {
-			$translator = new DibiTranslator($this->driver);
-			dibi::dump($translator->translate($args));
+			dibi::dump($this->translateArgs($args));
 			return TRUE;
 
 		} catch (DibiException $e) {
-			dibi::dump($e->getSql());
+			if ($e->getSql()) {
+				dibi::dump($e->getSql());
+			} else {
+				echo get_class($e) . ': ' . $e->getMessage() . (PHP_SAPI === 'cli' ? "\n" : '<br>');
+			}
 			return FALSE;
 		}
 	}
@@ -304,9 +310,20 @@ class DibiConnection extends DibiObject
 	final public function dataSource($args)
 	{
 		$args = func_get_args();
-		$this->connect();
-		$translator = new DibiTranslator($this->driver);
-		return new DibiDataSource($translator->translate($args), $this);
+		return new DibiDataSource($this->translateArgs($args), $this);
+	}
+
+
+
+	/**
+	 * Generates SQL query.
+	 * @param  array
+	 * @return string
+	 */
+	private function translateArgs($args)
+	{
+		$this->connected || $this->connect();
+		return $this->translator->translate($args);
 	}
 
 
@@ -319,38 +336,24 @@ class DibiConnection extends DibiObject
 	 */
 	final public function nativeQuery($sql)
 	{
-		$this->connect();
+		$this->connected || $this->connect();
 
-		if ($this->profiler !== NULL) {
-			$event = IDibiProfiler::QUERY;
-			if (preg_match('#\s*(SELECT|UPDATE|INSERT|DELETE)#i', $sql, $matches)) {
-				static $events = array(
-					'SELECT' => IDibiProfiler::SELECT, 'UPDATE' => IDibiProfiler::UPDATE,
-					'INSERT' => IDibiProfiler::INSERT, 'DELETE' => IDibiProfiler::DELETE,
-				);
-				$event = $events[strtoupper($matches[1])];
-			}
-			$ticket = $this->profiler->before($this, $event, $sql);
+		$event = $this->onEvent ? new DibiEvent($this, DibiEvent::QUERY, $sql) : NULL;
+		try {
+			$res = $this->driver->query($sql);
+
+		} catch (DibiException $e) {
+			$event && $this->onEvent($event->done($e));
+			throw $e;
 		}
-		// TODO: move to profiler?
-		dibi::$numOfQueries++;
-		dibi::$sql = $sql;
-		dibi::$elapsedTime = FALSE;
-		$time = -microtime(TRUE);
 
-		if ($res = $this->driver->query($sql)) { // intentionally =
-			$res = new DibiResult($res, $this->config);
+		if ($res) {
+			$res = $this->createResultSet($res);
 		} else {
 			$res = $this->driver->getAffectedRows();
 		}
 
-		$time += microtime(TRUE);
-		dibi::$elapsedTime = $time;
-		dibi::$totalTime += $time;
-
-		if (isset($ticket)) {
-			$this->profiler->after($ticket, $res);
-		}
+		$event && $this->onEvent($event->done($res));
 		return $res;
 	}
 
@@ -363,6 +366,7 @@ class DibiConnection extends DibiObject
 	 */
 	public function getAffectedRows()
 	{
+		$this->connected || $this->connect();
 		$rows = $this->driver->getAffectedRows();
 		if (!is_int($rows) || $rows < 0) throw new DibiException('Cannot retrieve number of affected rows.');
 		return $rows;
@@ -390,6 +394,7 @@ class DibiConnection extends DibiObject
 	 */
 	public function getInsertId($sequence = NULL)
 	{
+		$this->connected || $this->connect();
 		$id = $this->driver->getInsertId($sequence);
 		if ($id < 1) throw new DibiException('Cannot retrieve last generated ID.');
 		return (int) $id;
@@ -417,21 +422,15 @@ class DibiConnection extends DibiObject
 	 */
 	public function begin($savepoint = NULL)
 	{
-		$this->connect();
-		if (!$savepoint && $this->inTxn) {
-			throw new DibiException('There is already an active transaction.');
-		}
-		if ($this->profiler !== NULL) {
-			$ticket = $this->profiler->before($this, IDibiProfiler::BEGIN, $savepoint);
-		}
-		if ($savepoint && !$this->inTxn) {
-			$this->driver->begin();
-		}
-		$this->driver->begin($savepoint);
+		$this->connected || $this->connect();
+		$event = $this->onEvent ? new DibiEvent($this, DibiEvent::BEGIN, $savepoint) : NULL;
+		try {
+			$this->driver->begin($savepoint);
+			$event && $this->onEvent($event->done());
 
-		$this->inTxn = TRUE;
-		if (isset($ticket)) {
-			$this->profiler->after($ticket);
+		} catch (DibiException $e) {
+			$event && $this->onEvent($event->done($e));
+			throw $e;
 		}
 	}
 
@@ -444,16 +443,15 @@ class DibiConnection extends DibiObject
 	 */
 	public function commit($savepoint = NULL)
 	{
-		if (!$this->inTxn) {
-			throw new DibiException('There is no active transaction.');
-		}
-		if ($this->profiler !== NULL) {
-			$ticket = $this->profiler->before($this, IDibiProfiler::COMMIT, $savepoint);
-		}
-		$this->driver->commit($savepoint);
-		$this->inTxn = (bool) $savepoint;
-		if (isset($ticket)) {
-			$this->profiler->after($ticket);
+		$this->connected || $this->connect();
+		$event = $this->onEvent ? new DibiEvent($this, DibiEvent::COMMIT, $savepoint) : NULL;
+		try {
+			$this->driver->commit($savepoint);
+			$event && $this->onEvent($event->done());
+
+		} catch (DibiException $e) {
+			$event && $this->onEvent($event->done($e));
+			throw $e;
 		}
 	}
 
@@ -466,89 +464,30 @@ class DibiConnection extends DibiObject
 	 */
 	public function rollback($savepoint = NULL)
 	{
-		if (!$this->inTxn) {
-			throw new DibiException('There is no active transaction.');
+		$this->connected || $this->connect();
+		$event = $this->onEvent ? new DibiEvent($this, DibiEvent::ROLLBACK, $savepoint) : NULL;
+		try {
+			$this->driver->rollback($savepoint);
+			$event && $this->onEvent($event->done());
+
+		} catch (DibiException $e) {
+			$event && $this->onEvent($event->done($e));
+			throw $e;
 		}
-		if ($this->profiler !== NULL) {
-			$ticket = $this->profiler->before($this, IDibiProfiler::ROLLBACK, $savepoint);
-		}
-		$this->driver->rollback($savepoint);
-		$this->inTxn = (bool) $savepoint;
-		if (isset($ticket)) {
-			$this->profiler->after($ticket);
-		}
 	}
 
 
 
 	/**
-	 * Is in transaction?
-	 * @return bool
+	 * Result set factory.
+	 * @param  IDibiResultDriver
+	 * @return DibiResult
 	 */
-	public function inTransaction()
+	public function createResultSet(IDibiResultDriver $resultDriver)
 	{
-		return $this->inTxn;
-	}
-
-
-
-	/**
-	 * Encodes data for use in a SQL statement.
-	 * @param  string    unescaped string
-	 * @param  string    type (dibi::TEXT, dibi::BOOL, ...)
-	 * @return string    escaped and quoted string
-	 * @deprecated
-	 */
-	public function escape($value, $type = dibi::TEXT)
-	{
-		trigger_error('Deprecated: use getDriver()->escape(...) instead.', E_USER_WARNING);
-		$this->connect(); // MySQL & PDO require connection
-		return $this->driver->escape($value, $type);
-	}
-
-
-
-	/**
-	 * Decodes data from result set.
-	 * @param  string    value
-	 * @param  string    type (dibi::BINARY)
-	 * @return string    decoded value
-	 * @deprecated
-	 */
-	public function unescape($value, $type = dibi::BINARY)
-	{
-		trigger_error('Deprecated: use getDriver()->unescape(...) instead.', E_USER_WARNING);
-		return $this->driver->unescape($value, $type);
-	}
-
-
-
-	/**
-	 * Delimites identifier (table's or column's name, etc.).
-	 * @param  string    identifier
-	 * @return string    delimited identifier
-	 * @deprecated
-	 */
-	public function delimite($value)
-	{
-		trigger_error('Deprecated: use getDriver()->escape(...) instead.', E_USER_WARNING);
-		return $this->driver->escape($value, dibi::IDENTIFIER);
-	}
-
-
-
-	/**
-	 * Injects LIMIT/OFFSET to the SQL query.
-	 * @param  string &$sql  The SQL query that will be modified.
-	 * @param  int $limit
-	 * @param  int $offset
-	 * @return void
-	 * @deprecated
-	 */
-	public function applyLimit(&$sql, $limit, $offset)
-	{
-		trigger_error('Deprecated: use getDriver()->applyLimit(...) instead.', E_USER_WARNING);
-		$this->driver->applyLimit($sql, $limit, $offset);
+		$res = new DibiResult($resultDriver);
+		return $res->setFormat(dibi::DATE, $this->config['result']['formatDate'])
+			->setFormat(dibi::DATETIME, $this->config['result']['formatDateTime']);
 	}
 
 
@@ -586,8 +525,8 @@ class DibiConnection extends DibiObject
 	 */
 	public function update($table, $args)
 	{
-		if (!(is_array($args) || $args instanceof ArrayObject)) {
-			throw new InvalidArgumentException('Arguments must be array or ArrayObject.');
+		if (!(is_array($args) || $args instanceof Traversable)) {
+			throw new InvalidArgumentException('Arguments must be array or Traversable.');
 		}
 		return $this->command()->update('%n', $table)->set($args);
 	}
@@ -601,10 +540,10 @@ class DibiConnection extends DibiObject
 	 */
 	public function insert($table, $args)
 	{
-		if ($args instanceof ArrayObject) {
-			$args = (array) $args;
+		if ($args instanceof Traversable) {
+			$args = iterator_to_array($args);
 		} elseif (!is_array($args)) {
-			throw new InvalidArgumentException('Arguments must be array or ArrayObject.');
+			throw new InvalidArgumentException('Arguments must be array or Traversable.');
 		}
 		return $this->command()->insert()
 			->into('%n', $table, '(%n)', array_keys($args))->values('%l', $args);
@@ -623,28 +562,38 @@ class DibiConnection extends DibiObject
 
 
 
-	/********************* profiler ****************d*g**/
+	/********************* substitutions ****************d*g**/
 
 
 
 	/**
-	 * @param  IDibiProfiler
-	 * @return DibiConnection  provides a fluent interface
+	 * Returns substitution hashmap.
+	 * @return DibiHashMap
 	 */
-	public function setProfiler(IDibiProfiler $profiler = NULL)
+	public function getSubstitutes()
 	{
-		$this->profiler = $profiler;
-		return $this;
+		return $this->substitutes;
 	}
 
 
 
 	/**
-	 * @return IDibiProfiler
+	 * Provides substitution.
+	 * @return string
 	 */
-	public function getProfiler()
+	public function substitute($value)
 	{
-		return $this->profiler;
+		return strpos($value, ':') === FALSE ? $value : preg_replace_callback('#:([^:\s]*):#', array($this, 'subCb'), $value);
+	}
+
+
+
+	/**
+	 * Substitution callback.
+	 */
+	private function subCb($m)
+	{
+		return $this->substitutes->{$m[1]};
 	}
 
 
@@ -720,13 +669,12 @@ class DibiConnection extends DibiObject
 	 */
 	public function loadFile($file)
 	{
-		$this->connect();
-
+		$this->connected || $this->connect();
 		@set_time_limit(0); // intentionally @
 
 		$handle = @fopen($file, 'r'); // intentionally @
 		if (!$handle) {
-			throw new FileNotFoundException("Cannot open file '$file'.");
+			throw new RuntimeException("Cannot open file '$file'.");
 		}
 
 		$count = 0;
@@ -752,8 +700,8 @@ class DibiConnection extends DibiObject
 	 */
 	public function getDatabaseInfo()
 	{
-		$this->connect();
-		return new DibiDatabaseInfo($this->driver, isset($this->config['database']) ? $this->config['database'] : NULL);
+		$this->connected || $this->connect();
+		return new DibiDatabaseInfo($this->driver->getReflector(), isset($this->config['database']) ? $this->config['database'] : NULL);
 	}
 
 
@@ -763,7 +711,7 @@ class DibiConnection extends DibiObject
 	 */
 	public function __wakeup()
 	{
-		throw new NotSupportedException('You cannot serialize or unserialize ' . $this->getClass() . ' instances.');
+		throw new DibiNotSupportedException('You cannot serialize or unserialize ' . $this->getClass() . ' instances.');
 	}
 
 
@@ -773,7 +721,7 @@ class DibiConnection extends DibiObject
 	 */
 	public function __sleep()
 	{
-		throw new NotSupportedException('You cannot serialize or unserialize ' . $this->getClass() . ' instances.');
+		throw new DibiNotSupportedException('You cannot serialize or unserialize ' . $this->getClass() . ' instances.');
 	}
 
 }

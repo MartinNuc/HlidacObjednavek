@@ -1,20 +1,12 @@
 <?php
 
 /**
- * dibi - tiny'n'smart database abstraction layer
- * ----------------------------------------------
+ * This file is part of the "dibi" - smart database abstraction layer.
  *
- * Copyright (c) 2005, 2009 David Grudl (http://davidgrudl.com)
+ * Copyright (c) 2005 David Grudl (http://davidgrudl.com)
  *
- * This source file is subject to the "dibi license" that is bundled
- * with this package in the file license.txt.
- *
- * For more information please see http://dibiphp.com
- *
- * @copyright  Copyright (c) 2005, 2009 David Grudl
- * @license    http://dibiphp.com/license  dibi license
- * @link       http://dibiphp.com
- * @package    dibi
+ * For the full copyright and license information, please view
+ * the file license.txt that was distributed with this source code.
  */
 
 
@@ -23,8 +15,12 @@
  * Default implementation of IDataSource for dibi.
  *
  * @author     David Grudl
- * @copyright  Copyright (c) 2005, 2009 David Grudl
  * @package    dibi
+ *
+ * @property-read DibiConnection $connection
+ * @property-read DibiResult $result
+ * @property-read DibiResultIterator $iterator
+ * @property-read int $totalCount
  */
 class DibiDataSource extends DibiObject implements IDataSource
 {
@@ -66,7 +62,7 @@ class DibiDataSource extends DibiObject implements IDataSource
 	 */
 	public function __construct($sql, DibiConnection $connection)
 	{
-		if (strpos($sql, ' ') === FALSE) {
+		if (strpbrk($sql, " \t\r\n") === FALSE) {
 			$this->sql = $connection->getDriver()->escape($sql, dibi::IDENTIFIER); // table name
 		} else {
 			$this->sql = '(' . $sql . ') t'; // SQL command
@@ -267,7 +263,7 @@ class DibiDataSource extends DibiObject implements IDataSource
 	 */
 	public function toFluent()
 	{
-		return $this->connection->select('*')->from('(%SQL) AS t', $this->__toString());
+		return $this->connection->select('*')->from('(%SQL) t', $this->__toString());
 	}
 
 
@@ -287,15 +283,19 @@ class DibiDataSource extends DibiObject implements IDataSource
 	 * Returns SQL query.
 	 * @return string
 	 */
-	final public function __toString()
+	public function __toString()
 	{
-		return $this->connection->sql('
-			SELECT %n', (empty($this->cols) ? '*' : $this->cols), '
-			FROM %SQL', $this->sql, '
-			%ex', $this->conds ? array('WHERE %and', $this->conds) : NULL, '
-			%ex', $this->sorting ? array('ORDER BY %by', $this->sorting) : NULL, '
-			%ofs %lmt', $this->offset, $this->limit
-		);
+		try {
+			return $this->connection->translate('
+SELECT %n', (empty($this->cols) ? '*' : $this->cols), '
+FROM %SQL', $this->sql, '
+%ex', $this->conds ? array('WHERE %and', $this->conds) : NULL, '
+%ex', $this->sorting ? array('ORDER BY %by', $this->sorting) : NULL, '
+%ofs %lmt', $this->offset, $this->limit
+			);
+		} catch (Exception $e) {
+			trigger_error($e->getMessage(), E_USER_ERROR);
+		}
 	}
 
 
@@ -313,7 +313,7 @@ class DibiDataSource extends DibiObject implements IDataSource
 		if ($this->count === NULL) {
 			$this->count = $this->conds || $this->offset || $this->limit
 				? (int) $this->connection->nativeQuery(
-					'SELECT COUNT(*) FROM (' . $this->__toString() . ') AS t'
+					'SELECT COUNT(*) FROM (' . $this->__toString() . ') t'
 				)->fetchSingle()
 				: $this->getTotalCount();
 		}

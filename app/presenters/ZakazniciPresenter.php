@@ -41,6 +41,8 @@ class ZakazniciPresenter extends BasePresenter {
         $form->addText('email', 'Email zákazníka:')->setAttribute('autoComplete', "off")
                 ->addCondition(Form::FILLED) 
                 ->addRule(Form::EMAIL, 'Zadejte platný email.');
+        $form->addText('cislo_zakaznika', 'Číslo zákazníka:')->setAttribute('autoComplete', "off");
+        $form->addText('fakturacni_cislo', 'Fakturační číslo:')->setAttribute('autoComplete', "off");
         $form->addCheckbox('osobni_zakaznik', 'Osobní zákazník:');
         $form->addSubmit('novyZakaznik', 'Přidat');
         $form->onSuccess[] = array($this, 'novyZakaznik_submit');
@@ -60,6 +62,9 @@ class ZakazniciPresenter extends BasePresenter {
         $zakaznik->ico = $form['ico']->getValue();
         $zakaznik->osobni_zakaznik = $form['osobni_zakaznik']->getValue();
         $zakaznik->email = $form['email']->getValue();
+        
+        $zakaznik->fakturacni_cislo = $form['fakturacni_cislo']->getValue();
+        $zakaznik->cislo_zakaznika = $form['cislo_zakaznika']->getValue();
         
         $this->model->addZakaznik($zakaznik);
         if (!$this->isAjax())
@@ -121,6 +126,8 @@ class ZakazniciPresenter extends BasePresenter {
                 ->addCondition(Form::FILLED)
                 ->addRule(Form::EMAIL, 'Zadejte email.');
         $form->addText('poznamka', 'Poznámka:')->setAttribute('autoComplete', "off");
+        $form->addText('cislo_zakaznika', 'Číslo zákazníka:')->setAttribute('autoComplete', "off");
+        $form->addText('fakturacni_cislo', 'Fakturační číslo:')->setAttribute('autoComplete', "off");
         $form->addCheckbox('osobni_zakaznik', 'Osobní zákazník:');
         $form->addHidden('id');
         $form->addSubmit('editZakaznik', 'Uložit');
@@ -144,6 +151,9 @@ class ZakazniciPresenter extends BasePresenter {
         $zakaznik->poznamka = $form['poznamka']->getValue();
         $zakaznik->osobni_zakaznik = $form['osobni_zakaznik']->getValue();
         $zakaznik->email = $form['email']->getValue();
+        
+        $zakaznik->cislo_zakaznika = $form['cislo_zakaznika']->getValue();
+        $zakaznik->fakturacni_cislo = $form['fakturacni_cislo']->getValue();
         
         $zakaznik->save();
                 
@@ -359,6 +369,8 @@ class ZakazniciPresenter extends BasePresenter {
             $this["upravitZakaznika"]["telefon"]->setValue($zakaznik->telefon);
             $this["upravitZakaznika"]["poznamka"]->setValue($zakaznik->poznamka);
             $this["upravitZakaznika"]["email"]->setValue($zakaznik->email);
+            $this["upravitZakaznika"]["fakturacni_cislo"]->setValue($zakaznik->fakturacni_cislo);
+            $this["upravitZakaznika"]["cislo_zakaznika"]->setValue($zakaznik->cislo_zakaznika);
             // zbozi
             $this->template->zbozi = $zakaznik->getZboziZakaznika();
             

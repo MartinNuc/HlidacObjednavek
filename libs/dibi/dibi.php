@@ -1,79 +1,46 @@
 <?php
 
 /**
- * dibi - tiny'n'smart database abstraction layer
- * ----------------------------------------------
+ * dibi - smart database abstraction layer (http://dibiphp.com)
  *
- * Copyright (c) 2005, 2009 David Grudl (http://davidgrudl.com)
+ * Copyright (c) 2005, 2012 David Grudl (http://davidgrudl.com)
  *
- * This source file is subject to the "dibi license" that is bundled
- * with this package in the file license.txt.
- *
- * For more information please see http://dibiphp.com
- *
- * @copyright  Copyright (c) 2005, 2009 David Grudl
- * @license    http://dibiphp.com/license  dibi license
- * @link       http://dibiphp.com
- * @package    dibi
+ * For the full copyright and license information, please view
+ * the file license.txt that was distributed with this source code.
  */
 
 
 /**
  * Check PHP configuration.
  */
-if (version_compare(PHP_VERSION, '5.1.0', '<')) {
-	throw new Exception('dibi needs PHP 5.1.0 or newer.');
+if (version_compare(PHP_VERSION, '5.2.0', '<')) {
+	throw new Exception('dibi needs PHP 5.2.0 or newer.');
 }
 
 @set_magic_quotes_runtime(FALSE); // intentionally @
 
 
 
-/**
- * Compatibility with Nette
- */
-if (!class_exists('NotImplementedException', FALSE)) {
-	class NotImplementedException extends LogicException {}
-}
-
-if (!class_exists('NotSupportedException', FALSE)) {
-	class NotSupportedException extends LogicException {}
-}
-
-if (!class_exists('MemberAccessException', FALSE)) {
-	class MemberAccessException extends LogicException {}
-}
-
-if (!class_exists('InvalidStateException', FALSE)) {
-	class InvalidStateException extends RuntimeException {}
-}
-
-if (!class_exists('IOException', FALSE)) {
-	class IOException extends RuntimeException {}
-}
-
-if (!class_exists('FileNotFoundException', FALSE)) {
-	class FileNotFoundException extends IOException {}
-}
-
-if (!interface_exists(/*Nette\*/'IDebuggable', FALSE)) {
-	require_once dirname(__FILE__) . '/Nette/IDebuggable.php';
-}
-
-// dibi libraries
 require_once dirname(__FILE__) . '/libs/interfaces.php';
+require_once dirname(__FILE__) . '/libs/DibiDateTime.php';
 require_once dirname(__FILE__) . '/libs/DibiObject.php';
+require_once dirname(__FILE__) . '/libs/DibiLiteral.php';
+require_once dirname(__FILE__) . '/libs/DibiHashMap.php';
 require_once dirname(__FILE__) . '/libs/DibiException.php';
 require_once dirname(__FILE__) . '/libs/DibiConnection.php';
 require_once dirname(__FILE__) . '/libs/DibiResult.php';
 require_once dirname(__FILE__) . '/libs/DibiResultIterator.php';
 require_once dirname(__FILE__) . '/libs/DibiRow.php';
 require_once dirname(__FILE__) . '/libs/DibiTranslator.php';
-require_once dirname(__FILE__) . '/libs/DibiVariable.php';
 require_once dirname(__FILE__) . '/libs/DibiDataSource.php';
 require_once dirname(__FILE__) . '/libs/DibiFluent.php';
 require_once dirname(__FILE__) . '/libs/DibiDatabaseInfo.php';
-require_once dirname(__FILE__) . '/libs/DibiProfiler.php';
+require_once dirname(__FILE__) . '/libs/DibiEvent.php';
+require_once dirname(__FILE__) . '/libs/DibiFileLogger.php';
+require_once dirname(__FILE__) . '/libs/DibiFirePhpLogger.php';
+if (interface_exists('Nette\Diagnostics\IBarPanel') || interface_exists('IBarPanel')) {
+	require_once dirname(__FILE__) . '/Nette/DibiNettePanel.php';
+}
 
 
 
@@ -86,64 +53,45 @@ require_once dirname(__FILE__) . '/libs/DibiProfiler.php';
  * store connections info.
  *
  * @author     David Grudl
- * @copyright  Copyright (c) 2005, 2009 David Grudl
  * @package    dibi
  */
 class dibi
 {
-	/**#@+
-	 * dibi data type
-	 */
-	const TEXT =       's'; // as 'string'
-	const BINARY =     'bin';
-	const BOOL =       'b';
-	const INTEGER =    'i';
-	const FLOAT =      'f';
-	const DATE =       'd';
-	const DATETIME =   't';
-	const TIME =       't';
+	/** column type */
+	const TEXT = 's', // as 'string'
+		BINARY = 'bin',
+		BOOL = 'b',
+		INTEGER = 'i',
+		FLOAT = 'f',
+		DATE = 'd',
+		DATETIME = 't',
+		TIME = 't';
+
 	const IDENTIFIER = 'n';
-	/**#@-*/
 
-	/**#@+
-	 * @deprecated column types
-	 */
-	const FIELD_TEXT = self::TEXT;
-	const FIELD_BINARY = self::BINARY;
-	const FIELD_BOOL = self::BOOL;
-	const FIELD_INTEGER = self::INTEGER;
-	const FIELD_FLOAT = self::FLOAT;
-	const FIELD_DATE = self::DATE;
-	const FIELD_DATETIME = self::DATETIME;
-	const FIELD_TIME = self::TIME;
-	/**#@-*/
+	/** @deprecated */
+	const FIELD_TEXT = dibi::TEXT,
+		FIELD_BINARY = dibi::BINARY,
+		FIELD_BOOL = dibi::BOOL,
+		FIELD_INTEGER = dibi::INTEGER,
+		FIELD_FLOAT = dibi::FLOAT,
+		FIELD_DATE = dibi::DATE,
+		FIELD_DATETIME = dibi::DATETIME,
+		FIELD_TIME = dibi::TIME;
 
-	/**#@+
-	 * dibi version
-	 */
-	const VERSION = '1.2';
-	const REVISION = '3b2ca19 released on 2009-09-18';
-	/**#@-*/
+	/** version */
+	const VERSION = '2.0.1',
+		REVISION = '997f5a9 released on 2012-03-30';
 
-	/**#@+
-	 * Configuration options
-	 */
-	const RESULT_WITH_TABLES = 'resultWithTables'; // for MySQL
-	const ROW_CLASS = 'rowClass';
-	const ASC = 'ASC', DESC = 'DESC';
-	/**#@-*/
+	/** sorting order */
+	const ASC = 'ASC',
+		DESC = 'DESC';
 
 	/** @var DibiConnection[]  Connection registry storage for DibiConnection objects */
 	private static $registry = array();
 
 	/** @var DibiConnection  Current connection */
 	private static $connection;
-
-	/** @var array  Substitutions for identifiers */
-	public static $substs = array();
-
-	/** @var callback  Substitution fallback */
-	public static $substFallBack = array(__CLASS__, 'defaultSubstFallback');
 
 	/** @var array  @see addHandler */
 	private static $handlers = array();
@@ -181,8 +129,8 @@ class dibi
 
 	/**
 	 * Creates a new DibiConnection object and connects it to specified database.
-	 * @param  array|string|ArrayObject connection parameters
-	 * @param  string       connection name
+	 * @param  mixed   connection parameters
+	 * @param  string  connection name
 	 * @return DibiConnection
 	 * @throws DibiException
 	 */
@@ -241,6 +189,18 @@ class dibi
 
 
 	/**
+	 * Sets connection.
+	 * @param  DibiConnection
+	 * @return DibiConnection
+	 */
+	public static function setConnection(DibiConnection $connection)
+	{
+		return self::$connection = $connection;
+	}
+
+
+
+	/**
 	 * Change active connection.
 	 * @param  string   connection registy name
 	 * @return void
@@ -249,18 +209,6 @@ class dibi
 	public static function activate($name)
 	{
 		self::$connection = self::getConnection($name);
-	}
-
-
-
-	/**
-	 * Retrieve active connection profiler.
-	 * @return IDibiProfiler
-	 * @throws DibiException
-	 */
-	public static function getProfiler()
-	{
-		return self::getConnection()->getProfiler();
 	}
 
 
@@ -570,36 +518,23 @@ class dibi
 
 
 	/**
-	 * Pseudotype for timestamp representation.
-	 * @param  mixed  datetime
-	 * @return DibiVariable
+	 * @return DibiDateTime
 	 */
 	public static function datetime($time = NULL)
 	{
-		if ($time === NULL) {
-			$time = time(); // current time
-
-		} elseif (is_numeric($time)) {
-			$time = (int) $time; // timestamp
-
-		} elseif (is_string($time)) {
-			$time = class_exists('DateTime', FALSE) ? new DateTime($time) : strtotime($time); // DateTime is since PHP 5.2
-		}
-		return new DibiVariable($time, dibi::DATETIME);
+		trigger_error(__METHOD__ . '() is deprecated; create DibiDateTime object instead.', E_USER_WARNING);
+		return new DibiDateTime($time);
 	}
 
 
 
 	/**
-	 * Pseudotype for date representation.
-	 * @param  mixed  date
-	 * @return DibiVariable
+	 * @deprecated
 	 */
 	public static function date($date = NULL)
 	{
-		$var = self::datetime($date);
-		$var->modifier = dibi::DATE;
-		return $var;
+		trigger_error(__METHOD__ . '() is deprecated; create DibiDateTime object instead.', E_USER_WARNING);
+		return new DibiDateTime($date);
 	}
 
 
@@ -609,59 +544,46 @@ class dibi
 
 
 	/**
-	 * Create a new substitution pair for indentifiers.
-	 * @param  string from
-	 * @param  string to
-	 * @return void
+	 * Returns substitution hashmap - Monostate for DibiConnection::getSubstitutes().
+	 * @return DibiHashMap
 	 */
+	public static function getSubstitutes()
+	{
+		return self::getConnection()->getSubstitutes();
+	}
+
+
+
+	/** @deprecated */
 	public static function addSubst($expr, $subst)
 	{
-		self::$substs[$expr] = $subst;
+		trigger_error(__METHOD__ . '() is deprecated; use dibi::getSubstitutes()->expr = val; instead.', E_USER_WARNING);
+		self::getSubstitutes()->$expr = $subst;
 	}
 
 
 
-	/**
-	 * Remove substitution pair.
-	 * @param  mixed from or TRUE
-	 * @return void
-	 */
+	/** @deprecated */
 	public static function removeSubst($expr)
 	{
+		trigger_error(__METHOD__ . '() is deprecated; use unset(dibi::getSubstitutes()->expr) instead.', E_USER_WARNING);
+		$substitutes = self::getSubstitutes();
 		if ($expr === TRUE) {
-			self::$substs = array();
+			foreach ($substitutes as $expr => $foo) {
+				unset($substitutes->$expr);
+			}
 		} else {
-			unset(self::$substs[':'.$expr.':']);
+			unset($substitutes->$expr);
 		}
 	}
 
 
 
-	/**
-	 * Sets substitution fallback handler.
-	 * @param  callback
-	 * @return void
-	 */
+	/** @deprecated */
 	public static function setSubstFallback($callback)
 	{
-		if (!is_callable($callback)) {
-			$able = is_callable($callback, TRUE, $textual);
-			throw new InvalidArgumentException("Handler '$textual' is not " . ($able ? 'callable.' : 'valid PHP callback.'));
-		}
-
-		self::$substFallBack = $callback;
-	}
-
-
-
-	/**
-	 * Default substitution fallback handler.
-	 * @param  string
-	 * @return mixed
-	 */
-	public static function defaultSubstFallback($expr)
-	{
-		throw new InvalidStateException("Missing substitution for '$expr' expression.");
+		trigger_error(__METHOD__ . '() is deprecated; use dibi::getSubstitutes()->setCallback() instead.', E_USER_WARNING);
+		self::getSubstitutes()->setCallback($callback);
 	}
 
 
@@ -685,8 +607,8 @@ class dibi
 		} else {
 			if ($sql === NULL) $sql = self::$sql;
 
-			static $keywords1 = 'SELECT|UPDATE|INSERT(?:\s+INTO)?|REPLACE(?:\s+INTO)?|DELETE|FROM|WHERE|HAVING|GROUP\s+BY|ORDER\s+BY|LIMIT|SET|VALUES|LEFT\s+JOIN|INNER\s+JOIN|TRUNCATE';
-			static $keywords2 = 'ALL|DISTINCT|DISTINCTROW|AS|USING|ON|AND|OR|IN|IS|NOT|NULL|LIKE|TRUE|FALSE';
+			static $keywords1 = 'SELECT|(?:ON\s+DUPLICATE\s+KEY)?UPDATE|INSERT(?:\s+INTO)?|REPLACE(?:\s+INTO)?|DELETE|CALL|UNION|FROM|WHERE|HAVING|GROUP\s+BY|ORDER\s+BY|LIMIT|OFFSET|SET|VALUES|LEFT\s+JOIN|INNER\s+JOIN|TRUNCATE';
+			static $keywords2 = 'ALL|DISTINCT|DISTINCTROW|IGNORE|AS|USING|ON|AND|OR|IN|IS|NOT|NULL|LIKE|RLIKE|REGEXP|TRUE|FALSE';
 
 			// insert new lines
 			$sql = " $sql ";
@@ -696,13 +618,16 @@ class dibi
 			$sql = preg_replace('#[ \t]{2,}#', " ", $sql);
 
 			$sql = wordwrap($sql, 100);
-			$sql = htmlSpecialChars($sql);
-			$sql = preg_replace("#\n{2,}#", "\n", $sql);
+			$sql = preg_replace("#([ \t]*\r?\n){2,}#", "\n", $sql);
 
-			// syntax highlight
-			$sql = preg_replace_callback("#(/\\*.+?\\*/)|(\\*\\*.+?\\*\\*)|(?<=[\\s,(])($keywords1)(?=[\\s,)])|(?<=[\\s,(=])($keywords2)(?=[\\s,)=])#is", array('dibi', 'highlightCallback'), $sql);
-			$sql = trim($sql);
-			echo '<pre class="dump">', $sql, "</pre>\n";
+			if (PHP_SAPI === 'cli') {
+				echo trim($sql) . "\n\n";
+			} else {
+				// syntax highlight
+				$sql = htmlSpecialChars($sql);
+				$sql = preg_replace_callback("#(/\\*.+?\\*/)|(\\*\\*.+?\\*\\*)|(?<=[\\s,(])($keywords1)(?=[\\s,)])|(?<=[\\s,(=])($keywords2)(?=[\\s,)=])#is", array('dibi', 'highlightCallback'), $sql);
+				echo '<pre class="dump">', trim($sql), "</pre>\n";
+			}
 		}
 
 		if ($return) {
@@ -727,25 +652,6 @@ class dibi
 
 		if (!empty($matches[4])) // other keywords
 			return '<strong style="color:green">' . $matches[4] . '</strong>';
-	}
-
-
-
-	/**
-	 * Returns brief descriptions.
-	 * @return string
-	 * @return array
-	 */
-	public static function getColophon($sender = NULL)
-	{
-		$arr = array(
-			'Number of SQL queries: ' . dibi::$numOfQueries
-			. (dibi::$totalTime === NULL ? '' : ', elapsed time: ' . sprintf('%0.3f', dibi::$totalTime * 1000) . ' ms'),
-		);
-		if ($sender === 'bluescreen') {
-			$arr[] = 'dibi ' . dibi::VERSION . ' (revision ' . dibi::REVISION . ')';
-		}
-		return $arr;
 	}
 
 }

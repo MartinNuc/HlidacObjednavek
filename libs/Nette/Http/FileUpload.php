@@ -3,7 +3,7 @@
 /**
  * This file is part of the Nette Framework (http://nette.org)
  *
- * Copyright (c) 2004, 2011 David Grudl (http://davidgrudl.com)
+ * Copyright (c) 2004 David Grudl (http://davidgrudl.com)
  *
  * For the full copyright and license information, please view
  * the file license.txt that was distributed with this source code.
@@ -21,13 +21,15 @@ use Nette;
  * @author     David Grudl
  *
  * @property-read string $name
+ * @property-read string $sanitizedName
  * @property-read string $contentType
  * @property-read int $size
  * @property-read string $temporaryFile
- * @property-read Nette\Image $image
  * @property-read int $error
- * @property-read array $imageSize
  * @property-read bool $ok
+ * @property-read bool $image
+ * @property-read array $imageSize
+ * @property-read string $contents
  */
 class FileUpload extends Nette\Object
 {

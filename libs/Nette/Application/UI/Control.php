@@ -3,7 +3,7 @@
 /**
  * This file is part of the Nette Framework (http://nette.org)
  *
- * Copyright (c) 2004, 2011 David Grudl (http://davidgrudl.com)
+ * Copyright (c) 2004 David Grudl (http://davidgrudl.com)
  *
  * For the full copyright and license information, please view
  * the file license.txt that was distributed with this source code.
@@ -21,8 +21,9 @@ use Nette;
  * @author     David Grudl
  *
  * @property-read Nette\Templating\ITemplate $template
+ * @property-read string $snippetId
  */
-abstract class Control extends PresenterComponent implements IPartiallyRenderable
+abstract class Control extends PresenterComponent implements IRenderable
 {
 	/** @var Nette\Templating\ITemplate */
 	private $template;
@@ -58,29 +59,30 @@ abstract class Control extends PresenterComponent implements IPartiallyRenderabl
 
 
 	/**
+	 * @param  string|NULL
 	 * @return Nette\Templating\ITemplate
 	 */
 	protected function createTemplate($class = NULL)
 	{
 		$template = $class ? new $class : new Nette\Templating\FileTemplate;
 		$presenter = $this->getPresenter(FALSE);
-		$template->onPrepareFilters[] = callback($this, 'templatePrepareFilters');
-		$template->registerHelperLoader('Nette\Templating\DefaultHelpers::loader');
+		$template->onPrepareFilters[] = $this->templatePrepareFilters;
+		$template->registerHelperLoader('Nette\Templating\Helpers::loader');
 
 		// default parameters
-		$template->control = $this;
-		$template->presenter = $presenter;
+		$template->control = $template->_control = $this;
+		$template->presenter = $template->_presenter = $presenter;
 		if ($presenter instanceof Presenter) {
-			$template->setCacheStorage($presenter->getContext()->templateCacheStorage);
+			$template->setCacheStorage($presenter->getContext()->nette->templateCacheStorage);
 			$template->user = $presenter->getUser();
 			$template->netteHttpResponse = $presenter->getHttpResponse();
-			$template->netteCacheStorage = $presenter->getContext()->cacheStorage;
+			$template->netteCacheStorage = $presenter->getContext()->getByType('Nette\Caching\IStorage');
 			$template->baseUri = $template->baseUrl = rtrim($presenter->getHttpRequest()->getUrl()->getBaseUrl(), '/');
 			$template->basePath = preg_replace('#https?://[^/]+#A', '', $template->baseUrl);
 
 			// flash message
 			if ($presenter->hasFlashSession()) {
-				$id = $this->getParamId('flash');
+				$id = $this->getParameterId('flash');
 				$template->flashes = $presenter->getFlashSession()->$id;
 			}
 		}
@@ -100,7 +102,7 @@ abstract class Control extends PresenterComponent implements IPartiallyRenderabl
 	 */
 	public function templatePrepareFilters($template)
 	{
-		$template->registerFilter(new Nette\Latte\Engine);
+		$template->registerFilter($this->getPresenter()->getContext()->nette->createLatte());
 	}
 
 
@@ -112,6 +114,7 @@ abstract class Control extends PresenterComponent implements IPartiallyRenderabl
 	 */
 	public function getWidget($name)
 	{
+		trigger_error(__METHOD__ . '() is deprecated, use getComponent() instead.', E_USER_WARNING);
 		return $this->getComponent($name);
 	}
 
@@ -121,11 +124,11 @@ abstract class Control extends PresenterComponent implements IPartiallyRenderabl
 	 * Saves the message to template, that can be displayed after redirect.
 	 * @param  string
 	 * @param  string
-	 * @return stdClass
+	 * @return \stdClass
 	 */
 	public function flashMessage($message, $type = 'info')
 	{
-		$id = $this->getParamId('flash');
+		$id = $this->getParameterId('flash');
 		$messages = $this->getPresenter()->getFlashSession()->$id;
 		$messages[] = $flash = (object) array(
 			'message' => $message,
@@ -183,12 +186,21 @@ abstract class Control extends PresenterComponent implements IPartiallyRenderabl
 				return TRUE;
 
 			} else {
-				foreach ($this->getComponents() as $component) {
-					if ($component instanceof IRenderable && $component->isControlInvalid()) {
-						// $this->invalidSnippets['__child'] = TRUE; // as cache
-						return TRUE;
+				$queue = array($this);
+				do {
+					foreach (array_shift($queue)->getComponents() as $component) {
+						if ($component instanceof IRenderable) {
+							if ($component->isControlInvalid()) {
+								// $this->invalidSnippets['__child'] = TRUE; // as cache
+								return TRUE;
+							}
+
+						} elseif ($component instanceof Nette\ComponentModel\IContainer) {
+							$queue[] = $component;
+						}
 					}
-				}
+				} while ($queue);
+
 				return FALSE;
 			}
 

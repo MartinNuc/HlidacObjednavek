@@ -50,6 +50,9 @@ class Zakaznik extends DibiRow
         $this->email = $res->email;
         $this->poznamka = $res->poznamka;
         
+        $this->fakturacni_cislo = $res->fakturacni_cislo;
+        $this->cislo_zakaznika = $res->cislo_zakaznika;
+        
         return true;
     }
     

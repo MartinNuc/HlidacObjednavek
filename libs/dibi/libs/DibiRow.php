@@ -1,72 +1,71 @@
 <?php
 
 /**
- * dibi - tiny'n'smart database abstraction layer
- * ----------------------------------------------
+ * This file is part of the "dibi" - smart database abstraction layer.
  *
- * Copyright (c) 2005, 2009 David Grudl (http://davidgrudl.com)
+ * Copyright (c) 2005 David Grudl (http://davidgrudl.com)
  *
- * This source file is subject to the "dibi license" that is bundled
- * with this package in the file license.txt.
- *
- * For more information please see http://dibiphp.com
- *
- * @copyright  Copyright (c) 2005, 2009 David Grudl
- * @license    http://dibiphp.com/license  dibi license
- * @link       http://dibiphp.com
- * @package    dibi
+ * For the full copyright and license information, please view
+ * the file license.txt that was distributed with this source code.
  */
 
 
 
 /**
- * Result-set single row.
+ * Result set single row.
  *
  * @author     David Grudl
- * @copyright  Copyright (c) 2005, 2009 David Grudl
  * @package    dibi
  */
-class DibiRow extends ArrayObject
+class DibiRow implements ArrayAccess, IteratorAggregate, Countable
 {
 
-	/**
-	 * @param  array
-	 */
 	public function __construct($arr)
 	{
-		parent::__construct($arr, 2);
+		foreach ($arr as $k => $v) $this->$k = $v;
+	}
+
+
+
+	public function toArray()
+	{
+		return (array) $this;
 	}
 
 
 
 	/**
-	 * Converts value to date-time format.
+	 * Converts value to DateTime object.
 	 * @param  string key
-	 * @param  string format (TRUE means DateTime object)
-	 * @return mixed
+	 * @param  string format
+	 * @return DateTime
 	 */
-	public function asDate($key, $format = NULL)
+	public function asDateTime($key, $format = NULL)
 	{
 		$time = $this[$key];
-		if ($time == NULL) { // intentionally ==
-			return NULL;
-
-		} elseif ($format === NULL) { // return timestamp (default)
-			return is_numeric($time) ? (int) $time : strtotime($time);
-
-		} elseif ($format === TRUE) { // return DateTime object
-			return new DateTime(is_numeric($time) ? date('Y-m-d H:i:s', $time) : $time);
-
-		} elseif (is_numeric($time)) { // single timestamp
-			return date($format, $time);
-
-		} elseif (class_exists('DateTime', FALSE)) { // since PHP 5.2
-			$time = new DateTime($time);
-			return $time ? $time->format($format) : NULL;
-
-		} else {
-			return date($format, strtotime($time));
+		if (!$time instanceof DibiDateTime) {
+			if ((int) $time === 0) { // '', NULL, FALSE, '0000-00-00', ...
+				return NULL;
+			}
+			$time = new DibiDateTime(is_numeric($time) ? date('Y-m-d H:i:s', $time) : $time);
 		}
+		return $format === NULL ? $time : $time->format($format);
+	}
+
+
+
+	/**
+	 * Converts value to UNIX timestamp.
+	 * @param  string key
+	 * @return int
+	 */
+	public function asTimestamp($key)
+	{
+		trigger_error(__METHOD__ . '() is deprecated.', E_USER_WARNING);
+		$time = $this[$key];
+		return (int) $time === 0 // '', NULL, FALSE, '0000-00-00', ...
+			? NULL
+			: (is_numeric($time) ? (int) $time : strtotime($time));
 	}
 
 
@@ -78,24 +77,67 @@ class DibiRow extends ArrayObject
 	 */
 	public function asBool($key)
 	{
-		$value = $this[$key];
-		if ($value === NULL || $value === FALSE) {
-			return $value;
+		trigger_error(__METHOD__ . '() is deprecated.', E_USER_WARNING);
+		return $this[$key];
+	}
 
+
+
+	/** @deprecated */
+	public function asDate($key, $format = NULL)
+	{
+		trigger_error(__METHOD__ . '() is deprecated.', E_USER_WARNING);
+		if ($format === NULL) {
+			return $this->asTimestamp($key);
 		} else {
-			return ((bool) $value) && $value !== 'f' && $value !== 'F';
+			return $this->asDateTime($key, $format === TRUE ? NULL : $format);
 		}
 	}
 
 
 
-	/**
-	 * PHP < 5.3 workaround
-	 * @return void
-	 */
-	public function __wakeup()
+	/********************* interfaces ArrayAccess, Countable & IteratorAggregate ****************d*g**/
+
+
+
+	final public function count()
 	{
-		$this->setFlags(2);
+		return count((array) $this);
+	}
+
+
+
+	final public function getIterator()
+	{
+		return new ArrayIterator($this);
+	}
+
+
+
+	final public function offsetSet($nm, $val)
+	{
+		$this->$nm = $val;
+	}
+
+
+
+	final public function offsetGet($nm)
+	{
+		return $this->$nm;
+	}
+
+
+
+	final public function offsetExists($nm)
+	{
+		return isset($this->$nm);
+	}
+
+
+
+	final public function offsetUnset($nm)
+	{
+		unset($this->$nm);
 	}
 
 }

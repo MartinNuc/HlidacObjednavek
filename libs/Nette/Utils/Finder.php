@@ -3,7 +3,7 @@
 /**
  * This file is part of the Nette Framework (http://nette.org)
  *
- * Copyright (c) 2004, 2011 David Grudl (http://davidgrudl.com)
+ * Copyright (c) 2004 David Grudl (http://davidgrudl.com)
  *
  * For the full copyright and license information, please view
  * the file license.txt that was distributed with this source code.
@@ -193,7 +193,7 @@ class Finder extends Nette\Object implements \IteratorAggregate
 			$pattern[] = $prefix . strtr(preg_quote($mask, '#'),
 				array('\*\*' => '.*', '\*' => '[^/]*', '\?' => '[^/]', '\[\!' => '[^', '\[' => '[', '\]' => ']', '\-' => '-'));
 		}
-		return $pattern ? '#/(' . implode('|', $pattern) . ')$#i' : NULL;
+		return $pattern ? '#/(' . implode('|', $pattern) . ')\z#i' : NULL;
 	}
 
 
@@ -204,7 +204,7 @@ class Finder extends Nette\Object implements \IteratorAggregate
 
 	/**
 	 * Returns iterator.
-	 * @return Nette\Iterator
+	 * @return \Iterator
 	 */
 	public function getIterator()
 	{
@@ -215,10 +215,12 @@ class Finder extends Nette\Object implements \IteratorAggregate
 			return $this->buildIterator($this->paths[0]);
 
 		} else {
-			$iterator = new \AppendIterator(); // buggy!
+			$iterator = new \AppendIterator();
+			$iterator->append($workaround = new \ArrayIterator(array('workaround PHP bugs #49104, #63077')));
 			foreach ($this->paths as $path) {
 				$iterator->append($this->buildIterator($path));
 			}
+			unset($workaround[0]);
 			return $iterator;
 		}
 	}
@@ -228,7 +230,7 @@ class Finder extends Nette\Object implements \IteratorAggregate
 	/**
 	 * Returns per-path iterator.
 	 * @param  string
-	 * @return Nette\Iterator
+	 * @return \Iterator
 	 */
 	private function buildIterator($path)
 	{
@@ -305,7 +307,7 @@ class Finder extends Nette\Object implements \IteratorAggregate
 
 	/**
 	 * Restricts the search using callback.
-	 * @param  callback
+	 * @param  callable
 	 * @return Finder  provides a fluent interface
 	 */
 	public function filter($callback)
@@ -338,7 +340,7 @@ class Finder extends Nette\Object implements \IteratorAggregate
 	public function size($operator, $size = NULL)
 	{
 		if (func_num_args() === 1) { // in $operator is predicate
-			if (!preg_match('#^(?:([=<>!]=?|<>)\s*)?((?:\d*\.)?\d+)\s*(K|M|G|)B?$#i', $operator, $matches)) {
+			if (!preg_match('#^(?:([=<>!]=?|<>)\s*)?((?:\d*\.)?\d+)\s*(K|M|G|)B?\z#i', $operator, $matches)) {
 				throw new Nette\InvalidArgumentException('Invalid size predicate format.');
 			}
 			list(, $operator, $size, $unit) = $matches;
@@ -362,7 +364,7 @@ class Finder extends Nette\Object implements \IteratorAggregate
 	public function date($operator, $date = NULL)
 	{
 		if (func_num_args() === 1) { // in $operator is predicate
-			if (!preg_match('#^(?:([=<>!]=?|<>)\s*)?(.+)$#i', $operator, $matches)) {
+			if (!preg_match('#^(?:([=<>!]=?|<>)\s*)?(.+)\z#i', $operator, $matches)) {
 				throw new Nette\InvalidArgumentException('Invalid date predicate format.');
 			}
 			list(, $operator, $date) = $matches;

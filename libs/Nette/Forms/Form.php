@@ -3,7 +3,7 @@
 /**
  * This file is part of the Nette Framework (http://nette.org)
  *
- * Copyright (c) 2004, 2011 David Grudl (http://davidgrudl.com)
+ * Copyright (c) 2004 David Grudl (http://davidgrudl.com)
  *
  * For the full copyright and license information, please view
  * the file license.txt that was distributed with this source code.
@@ -20,23 +20,17 @@ use Nette;
  *
  * @author     David Grudl
  *
- * @example    forms/basic-example.php  Form definition using fluent interfaces
- * @example    forms/manual-rendering.php  Manual form rendering and separated form and rules definition
- * @example    forms/localization.php  Localization (with Zend_Translate)
- * @example    forms/custom-rendering.php  Custom form rendering
- * @example    forms/custom-validator.php  How to use custom validator
- * @example    forms/naming-containers.php  How to use naming containers
- * @example    forms/CSRF-protection.php  How to use Cross-Site Request Forgery (CSRF) form protection
- *
- * @property   string $action
+ * @property   mixed $action
  * @property   string $method
  * @property-read array $groups
+ * @property   Nette\Localization\ITranslator|NULL $translator
+ * @property-read bool $anchored
+ * @property-read ISubmitterControl|FALSE $submitted
+ * @property-read bool $success
  * @property-read array $httpData
- * @property   Nette\Localization\ITranslator $translator
  * @property-read array $errors
  * @property-read Nette\Utils\Html $elementPrototype
  * @property   IFormRenderer $renderer
- * @property-read bool $submitted
  */
 class Form extends Container
 {
@@ -64,6 +58,9 @@ class Form extends Container
 		NUMERIC = ':integer',
 		FLOAT = ':float',
 		RANGE = ':range';
+
+	// multiselect
+	const COUNT = ':length';
 
 	// file upload
 	const MAX_FILE_SIZE = ':fileSize',
@@ -107,7 +104,7 @@ class Form extends Container
 	/** @var Nette\Localization\ITranslator */
 	private $translator;
 
-	/** @var array of ControlGroup */
+	/** @var ControlGroup[] */
 	private $groups = array();
 
 	/** @var array */
@@ -124,7 +121,7 @@ class Form extends Container
 		$this->element = Nette\Utils\Html::el('form');
 		$this->element->action = ''; // RFC 1808 -> empty uri means 'this'
 		$this->element->method = self::POST;
-		$this->element->id = 'frm-' . $name;
+		$this->element->id = $name === NULL ? NULL : 'frm-' . $name;
 
 		$this->monitor(__CLASS__);
 		if ($name !== NULL) {
@@ -290,7 +287,7 @@ class Form extends Container
 
 	/**
 	 * Returns all defined groups.
-	 * @return array of FormGroup
+	 * @return FormGroup[]
 	 */
 	public function getGroups()
 	{
@@ -317,7 +314,6 @@ class Form extends Container
 
 	/**
 	 * Sets translate adapter.
-	 * @param  Nette\Localization\ITranslator
 	 * @return Form  provides a fluent interface
 	 */
 	public function setTranslator(Nette\Localization\ITranslator $translator = NULL)
@@ -362,7 +358,7 @@ class Form extends Container
 	{
 		if ($this->submittedBy === NULL && count($this->getControls())) {
 			$this->getHttpData();
-			$this->submittedBy = !empty($this->httpData);
+			$this->submittedBy = $this->httpData !== NULL;
 		}
 		return $this->submittedBy;
 	}
@@ -370,8 +366,18 @@ class Form extends Container
 
 
 	/**
+	 * Tells if the form was submitted and successfully validated.
+	 * @return bool
+	 */
+	final public function isSuccess()
+	{
+		return $this->isSubmitted() && $this->isValid();
+	}
+
+
+
+	/**
 	 * Sets the submittor control.
-	 * @param  ISubmitterControl
 	 * @return Form  provides a fluent interface
 	 */
 	public function setSubmittedBy(ISubmitterControl $by = NULL)
@@ -392,7 +398,7 @@ class Form extends Container
 			if (!$this->isAnchored()) {
 				throw new Nette\InvalidStateException('Form is not anchored and therefore can not determine whether it was submitted.');
 			}
-			$this->httpData = (array) $this->receiveHttpData();
+			$this->httpData = $this->receiveHttpData();
 		}
 		return $this->httpData;
 	}
@@ -473,11 +479,11 @@ class Form extends Container
 
 	/**
 	 * Returns the values submitted by the form.
-	 * @return array
+	 * @return Nette\ArrayHash|array
 	 */
-	public function getValues()
+	public function getValues($asArray = FALSE)
 	{
-		$values = parent::getValues();
+		$values = parent::getValues($asArray);
 		unset($values[self::TRACKER_ID], $values[self::PROTECTOR_ID]);
 		return $values;
 	}
@@ -552,7 +558,6 @@ class Form extends Container
 
 	/**
 	 * Sets form renderer.
-	 * @param  IFormRenderer
 	 * @return Form  provides a fluent interface
 	 */
 	public function setRenderer(IFormRenderer $renderer)
@@ -604,7 +609,7 @@ class Form extends Container
 			if (func_get_args() && func_get_arg(0)) {
 				throw $e;
 			} else {
-				Nette\Diagnostics\Debugger::toStringException($e);
+				trigger_error("Exception in " . __METHOD__ . "(): {$e->getMessage()} in {$e->getFile()}:{$e->getLine()}", E_USER_ERROR);
 			}
 		}
 	}

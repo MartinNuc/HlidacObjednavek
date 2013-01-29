@@ -1,20 +1,12 @@
 <?php
 
 /**
- * dibi - tiny'n'smart database abstraction layer
- * ----------------------------------------------
+ * This file is part of the "dibi" - smart database abstraction layer.
  *
- * Copyright (c) 2005, 2009 David Grudl (http://davidgrudl.com)
+ * Copyright (c) 2005 David Grudl (http://davidgrudl.com)
  *
- * This source file is subject to the "dibi license" that is bundled
- * with this package in the file license.txt.
- *
- * For more information please see http://dibiphp.com
- *
- * @copyright  Copyright (c) 2005, 2009 David Grudl
- * @license    http://dibiphp.com/license  dibi license
- * @link       http://dibiphp.com
- * @package    dibi
+ * For the full copyright and license information, please view
+ * the file license.txt that was distributed with this source code.
  */
 
 
@@ -23,10 +15,9 @@
  * dibi common exception.
  *
  * @author     David Grudl
- * @copyright  Copyright (c) 2005, 2009 David Grudl
  * @package    dibi
  */
-class DibiException extends Exception implements /*Nette\*/IDebuggable
+class DibiException extends Exception
 {
 	/** @var string */
 	private $sql;
@@ -42,7 +33,6 @@ class DibiException extends Exception implements /*Nette\*/IDebuggable
 	{
 		parent::__construct($message, (int) $code);
 		$this->sql = $sql;
-		// TODO: add $profiler->exception($this);
 	}
 
 
@@ -65,27 +55,6 @@ class DibiException extends Exception implements /*Nette\*/IDebuggable
 		return parent::__toString() . ($this->sql ? "\nSQL: " . $this->sql : '');
 	}
 
-
-
-	/********************* interface Nette\IDebuggable ****************d*g**/
-
-
-	/**
-	 * Returns custom panels.
-	 * @return array
-	 */
-	public function getPanels()
-	{
-		$panels = array();
-		if ($this->sql !== NULL) {
-			$panels['SQL'] = array(
-				'expanded' => TRUE,
-				'content' => dibi::dump($this->sql, TRUE),
-			);
-		}
-		return $panels;
-	}
-
 }
 
 
@@ -95,7 +64,6 @@ class DibiException extends Exception implements /*Nette\*/IDebuggable
  * database server exception.
  *
  * @author     David Grudl
- * @copyright  Copyright (c) 2005, 2009 David Grudl
  * @package    dibi
  */
 class DibiDriverException extends DibiException
@@ -154,3 +122,44 @@ class DibiDriverException extends DibiException
 	}
 
 }
+
+
+
+
+/**
+ * PCRE exception.
+ *
+ * @author     David Grudl
+ * @package    dibi
+ */
+class DibiPcreException extends Exception {
+
+	public function __construct($message = '%msg.')
+	{
+		static $messages = array(
+			PREG_INTERNAL_ERROR => 'Internal error',
+			PREG_BACKTRACK_LIMIT_ERROR => 'Backtrack limit was exhausted',
+			PREG_RECURSION_LIMIT_ERROR => 'Recursion limit was exhausted',
+			PREG_BAD_UTF8_ERROR => 'Malformed UTF-8 data',
+			5 => 'Offset didn\'t correspond to the begin of a valid UTF-8 code point', // PREG_BAD_UTF8_OFFSET_ERROR
+		);
+		$code = preg_last_error();
+		parent::__construct(str_replace('%msg', isset($messages[$code]) ? $messages[$code] : 'Unknown error', $message), $code);
+	}
+}
+
+
+
+/**
+ * @package    dibi
+ */
+class DibiNotImplementedException extends DibiException
+{}
+
+
+
+/**
+ * @package    dibi
+ */
+class DibiNotSupportedException extends DibiException
+{}

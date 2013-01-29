@@ -3,7 +3,7 @@
 /**
  * This file is part of the Nette Framework (http://nette.org)
  *
- * Copyright (c) 2004, 2011 David Grudl (http://davidgrudl.com)
+ * Copyright (c) 2004 David Grudl (http://davidgrudl.com)
  *
  * For the full copyright and license information, please view
  * the file license.txt that was distributed with this source code.
@@ -27,9 +27,6 @@ use Nette;
  *
  * @author     David Grudl
  *
- * @property-read int $width
- * @property-read int $height
- * @property-read resource $imageResource
  * @method void alphaBlending(bool $on)
  * @method void antialias(bool $on)
  * @method void arc($x, $y, $w, $h, $s, $e, $color)
@@ -99,20 +96,26 @@ use Nette;
  * @method array ttfBBox($size, $angle, string $fontfile, string $text)
  * @method array ttfText($size, $angle, $x, $y, $color, string $fontfile, string $text)
  * @method int types()
+ * @property-read int $width
+ * @property-read int $height
+ * @property-read resource $imageResource
  */
 class Image extends Object
 {
-	/** {@link resize()} allows enlarging image (it only shrinks images by default) */
-	const ENLARGE = 1;
+	/** {@link resize()} only shrinks images */
+	const SHRINK_ONLY = 1;
 
 	/** {@link resize()} will ignore aspect ratio */
 	const STRETCH = 2;
 
-	/** {@link resize()} fits in given area */
+	/** {@link resize()} fits in given area so its dimensions are less than or equal to the required dimensions */
 	const FIT = 0;
 
-	/** {@link resize()} fills (and even overflows) given area */
+	/** {@link resize()} fills given area so its dimensions are greater than or equal to the required dimensions */
 	const FILL = 4;
+
+	/** {@link resize()} fills given area exactly */
+	const EXACT = 8;
 
 	/** @int image types {@link send()} */
 	const JPEG = IMAGETYPE_JPEG,
@@ -120,6 +123,9 @@ class Image extends Object
 		GIF = IMAGETYPE_GIF;
 
 	const EMPTY_GIF = "GIF89a\x01\x00\x01\x00\x80\x00\x00\x00\x00\x00\x00\x00\x00!\xf9\x04\x01\x00\x00\x00\x00,\x00\x00\x00\x00\x01\x00\x01\x00\x00\x02\x02D\x01\x00;";
+
+	/** @deprecated */
+	const ENLARGE = 0;
 
 	/** @var resource */
 	private $image;
@@ -312,10 +318,14 @@ class Image extends Object
 	 */
 	public function resize($width, $height, $flags = self::FIT)
 	{
-		list($newWidth, $newHeight) = self::calculateSize($this->getWidth(), $this->getHeight(), $width, $height, $flags);
+		if ($flags & self::EXACT) {
+			return $this->resize($width, $height, self::FILL)->crop('50%', '50%', $width, $height);
+		}
+
+		list($newWidth, $newHeight) = static::calculateSize($this->getWidth(), $this->getHeight(), $width, $height, $flags);
 
 		if ($newWidth !== $this->getWidth() || $newHeight !== $this->getHeight()) { // resize
-			$newImage = self::fromBlank($newWidth, $newHeight, self::RGB(0, 0, 0, 127))->getImageResource();
+			$newImage = static::fromBlank($newWidth, $newHeight, self::RGB(0, 0, 0, 127))->getImageResource();
 			imagecopyresampled(
 				$newImage, $this->getImageResource(),
 				0, 0, 0, 0,
@@ -325,7 +335,7 @@ class Image extends Object
 		}
 
 		if ($width < 0 || $height < 0) { // flip is processed in two steps for better quality
-			$newImage = self::fromBlank($newWidth, $newHeight, self::RGB(0, 0, 0, 127))->getImageResource();
+			$newImage = static::fromBlank($newWidth, $newHeight, self::RGB(0, 0, 0, 127))->getImageResource();
 			imagecopyresampled(
 				$newImage, $this->getImageResource(),
 				0, 0, $width < 0 ? $newWidth - 1 : 0, $height < 0 ? $newHeight - 1 : 0,
@@ -351,7 +361,6 @@ class Image extends Object
 	{
 		if (substr($newWidth, -1) === '%') {
 			$newWidth = round($srcWidth / 100 * abs($newWidth));
-			$flags |= self::ENLARGE;
 			$percents = TRUE;
 		} else {
 			$newWidth = (int) abs($newWidth);
@@ -359,7 +368,7 @@ class Image extends Object
 
 		if (substr($newHeight, -1) === '%') {
 			$newHeight = round($srcHeight / 100 * abs($newHeight));
-			$flags |= empty($percents) ? self::ENLARGE : self::STRETCH;
+			$flags |= empty($percents) ? 0 : self::STRETCH;
 		} else {
 			$newHeight = (int) abs($newHeight);
 		}
@@ -369,7 +378,7 @@ class Image extends Object
 				throw new InvalidArgumentException('For stretching must be both width and height specified.');
 			}
 
-			if (($flags & self::ENLARGE) === 0) {
+			if ($flags & self::SHRINK_ONLY) {
 				$newWidth = round($srcWidth * min(1, $newWidth / $srcWidth));
 				$newHeight = round($srcHeight * min(1, $newHeight / $srcHeight));
 			}
@@ -392,7 +401,7 @@ class Image extends Object
 				$scale = array(max($scale));
 			}
 
-			if (($flags & self::ENLARGE) === 0) {
+			if ($flags & self::SHRINK_ONLY) {
 				$scale[] = 1;
 			}
 
@@ -416,8 +425,8 @@ class Image extends Object
 	 */
 	public function crop($left, $top, $width, $height)
 	{
-		list($left, $top, $width, $height) = self::calculateCutout($this->getWidth(), $this->getHeight(), $left, $top, $width, $height);
-		$newImage = self::fromBlank($width, $height, self::RGB(0, 0, 0, 127))->getImageResource();
+		list($left, $top, $width, $height) = static::calculateCutout($this->getWidth(), $this->getHeight(), $left, $top, $width, $height);
+		$newImage = static::fromBlank($width, $height, self::RGB(0, 0, 0, 127))->getImageResource();
 		imagecopy($newImage, $this->getImageResource(), 0, 0, $left, $top, $width, $height);
 		$this->image = $newImage;
 		return $this;
@@ -583,7 +592,7 @@ class Image extends Object
 			return $this->toString();
 
 		} catch (\Exception $e) {
-			Diagnostics\Debugger::toStringException($e);
+			trigger_error("Exception in " . __METHOD__ . "(): {$e->getMessage()} in {$e->getFile()}:{$e->getLine()}", E_USER_ERROR);
 		}
 	}
 
@@ -644,7 +653,6 @@ class Image extends Object
 
 /**
  * The exception that indicates invalid image file.
- * @internal
  */
 class UnknownImageFileException extends \Exception
 {

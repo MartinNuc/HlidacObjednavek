@@ -13,7 +13,13 @@
     <p>
     Oblast: {$objednavka->oblast_nazev}<br/>
     Zákazník: {$objednavka->zakaznik_nazev}<br/>
-    IČ: {$zakaznik[$objednavka->id_objednavka]}</p>
+    IČ: {$zakaznik_ico[$objednavka->id_objednavka]}</p>
+    {if $zakaznik_cislo_zakaznika[$objednavka->id_objednavka] != NULL || $zakaznik_cislo_zakaznika[$objednavka->id_objednavka] != ""}
+        Číslo zákazníka: {$zakaznik_cislo_zakaznika}
+    {/if}
+    {if $zakaznik_fakturacni_cislo[$objednavka->id_objednavka] != NULL || $zakaznik_fakturacni_cislo[$objednavka->id_objednavka] != ""}
+        Fakturační číslo: {$zakaznik_fakturacni_cislo}
+    {/if}
     <table class="table">
         <thead>
             <tr>

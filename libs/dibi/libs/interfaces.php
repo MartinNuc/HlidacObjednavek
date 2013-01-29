@@ -1,46 +1,19 @@
 <?php
 
 /**
- * dibi - tiny'n'smart database abstraction layer
- * ----------------------------------------------
+ * This file is part of the "dibi" - smart database abstraction layer.
  *
- * Copyright (c) 2005, 2009 David Grudl (http://davidgrudl.com)
+ * Copyright (c) 2005 David Grudl (http://davidgrudl.com)
  *
- * This source file is subject to the "dibi license" that is bundled
- * with this package in the file license.txt.
- *
- * For more information please see http://dibiphp.com
- *
- * @copyright  Copyright (c) 2005, 2009 David Grudl
- * @license    http://dibiphp.com/license  dibi license
- * @link       http://dibiphp.com
- * @package    dibi
+ * For the full copyright and license information, please view
+ * the file license.txt that was distributed with this source code.
  */
-
-
-
-/**
- * Interface for user variable, used for generating SQL.
- * @package dibi
- */
-interface IDibiVariable
-{
-	/**
-	 * Format for SQL.
-	 * @param  DibiTranslator
-	 * @param  string  optional modifier
-	 * @return string  SQL code
-	 */
-	function toSql(DibiTranslator $translator, $modifier);
-}
-
-
 
 
 
 /**
  * Provides an interface between a dataset and data-aware components.
- * @package dibi
+ * @package    dibi
  */
 interface IDataSource extends Countable, IteratorAggregate
 {
@@ -50,64 +23,8 @@ interface IDataSource extends Countable, IteratorAggregate
 
 
 
-
-
-/**
- * Defines method that must profiler implement.
- * @package dibi
- */
-interface IDibiProfiler
-{
-	/**#@+ event type */
-	const CONNECT = 1;
-	const SELECT = 4;
-	const INSERT = 8;
-	const DELETE = 16;
-	const UPDATE = 32;
-	const QUERY = 60;
-	const BEGIN = 64;
-	const COMMIT = 128;
-	const ROLLBACK = 256;
-	const TRANSACTION = 448;
-	const EXCEPTION = 512;
-	const ALL = 1023;
-	/**#@-*/
-
-	/**
-	 * Before event notification.
-	 * @param  DibiConnection
-	 * @param  int     event name
-	 * @param  string  sql
-	 * @return int
-	 */
-	function before(DibiConnection $connection, $event, $sql = NULL);
-
-	/**
-	 * After event notification.
-	 * @param  int
-	 * @param  DibiResult
-	 * @return void
-	 */
-	function after($ticket, $result = NULL);
-
-	/**
-	 * After exception notification.
-	 * @param  DibiDriverException
-	 * @return void
-	 */
-	function exception(DibiDriverException $exception);
-
-}
-
-
-
-
-
 /**
  * dibi driver interface.
- *
- * @author     David Grudl
- * @copyright  Copyright (c) 2005, 2009 David Grudl
  * @package    dibi
  */
 interface IDibiDriver
@@ -131,7 +48,7 @@ interface IDibiDriver
 	/**
 	 * Internal: Executes the SQL query.
 	 * @param  string      SQL statement.
-	 * @return IDibiDriver|NULL
+	 * @return IDibiResultDriver|NULL
 	 * @throws DibiDriverException
 	 */
 	function query($sql);
@@ -178,11 +95,11 @@ interface IDibiDriver
 	 */
 	function getResource();
 
-
-
-	/********************* SQL ****************d*g**/
-
-
+	/**
+	 * Returns the connection reflector.
+	 * @return IDibiReflector
+	 */
+	function getReflector();
 
 	/**
 	 * Encodes data for use in a SQL statement.
@@ -194,13 +111,12 @@ interface IDibiDriver
 	function escape($value, $type);
 
 	/**
-	 * Decodes data from result set.
-	 * @param  string    value
-	 * @param  string    type (dibi::BINARY)
-	 * @return string    decoded value
-	 * @throws InvalidArgumentException
+	 * Encodes string for use in a LIKE statement.
+	 * @param  string
+	 * @param  int
+	 * @return string
 	 */
-	function unescape($value, $type);
+	function escapeLike($value, $pos);
 
 	/**
 	 * Injects LIMIT/OFFSET to the SQL query.
@@ -211,11 +127,18 @@ interface IDibiDriver
 	 */
 	function applyLimit(&$sql, $limit, $offset);
 
+}
 
 
-	/********************* result set ****************d*g**/
 
 
+
+/**
+ * dibi result set driver interface.
+ * @package    dibi
+ */
+interface IDibiResultDriver
+{
 
 	/**
 	 * Returns the number of rows in a result set.
@@ -248,10 +171,9 @@ interface IDibiDriver
 
 	/**
 	 * Returns metadata for all columns in a result set.
-	 * @return array
-	 * @throws DibiException
+	 * @return array of {name, nativetype [, table, fullname, (int) size, (bool) nullable, (mixed) default, (bool) autoincrement, (array) vendor ]}
 	 */
-	function getColumnsMeta();
+	function getResultColumns();
 
 	/**
 	 * Returns the result set resource.
@@ -259,29 +181,47 @@ interface IDibiDriver
 	 */
 	function getResultResource();
 
+	/**
+	 * Decodes data from result set.
+	 * @param  string    value
+	 * @param  string    type (dibi::BINARY)
+	 * @return string    decoded value
+	 * @throws InvalidArgumentException
+	 */
+	function unescape($value, $type);
+
+}
 
 
-	/********************* reflection ****************d*g**/
 
 
+
+/**
+ * dibi driver reflection.
+ *
+ * @author     David Grudl
+ * @package    dibi
+ */
+interface IDibiReflector
+{
 
 	/**
 	 * Returns list of tables.
-	 * @return array
+	 * @return array of {name [, (bool) view ]}
 	 */
 	function getTables();
 
 	/**
 	 * Returns metadata for all columns in a table.
 	 * @param  string
-	 * @return array
+	 * @return array of {name, nativetype [, table, fullname, (int) size, (bool) nullable, (mixed) default, (bool) autoincrement, (array) vendor ]}
 	 */
 	function getColumns($table);
 
 	/**
 	 * Returns metadata for all indexes in a table.
 	 * @param  string
-	 * @return array
+	 * @return array of {name, (array of names) columns [, (bool) unique, (bool) primary ]}
 	 */
 	function getIndexes($table);
 

@@ -3,7 +3,7 @@
 /**
  * This file is part of the Nette Framework (http://nette.org)
  *
- * Copyright (c) 2004, 2011 David Grudl (http://davidgrudl.com)
+ * Copyright (c) 2004 David Grudl (http://davidgrudl.com)
  *
  * For the full copyright and license information, please view
  * the file license.txt that was distributed with this source code.
@@ -11,7 +11,8 @@
 
 namespace Nette\Utils;
 
-use Nette;
+use Nette,
+	Nette\Diagnostics\Debugger;
 
 
 
@@ -54,9 +55,15 @@ class Strings
 	 */
 	public static function fixEncoding($s, $encoding = 'UTF-8')
 	{
-		// removes xD800-xDFFF, xFEFF, xFFFF, x110000 and higher
-		$s = @iconv('UTF-16', $encoding . '//IGNORE', iconv($encoding, 'UTF-16//IGNORE', $s)); // intentionally @
-		return str_replace("\xEF\xBB\xBF", '', $s); // remove UTF-8 BOM
+		// removes xD800-xDFFF, xFEFF, x110000 and higher
+		if (strcasecmp($encoding, 'UTF-8') === 0) {
+			$s = str_replace("\xEF\xBB\xBF", '', $s); // remove UTF-8 BOM
+		}
+		if (PHP_VERSION_ID >= 50400) {
+			ini_set('mbstring.substitute_character', 'none');
+			return mb_convert_encoding($s, $encoding, $encoding);
+		}
+		return @iconv('UTF-16', $encoding . '//IGNORE', iconv($encoding, 'UTF-16//IGNORE', $s)); // intentionally @
 	}
 
 
@@ -123,9 +130,9 @@ class Strings
 	public static function substring($s, $start, $length = NULL)
 	{
 		if ($length === NULL) {
-			$length = PHP_INT_MAX;
+			$length = self::length($s);
 		}
-		return function_exists('mb_substr') ? mb_substr($s, $start, $length, 'UTF-8') : iconv_substr($s, $start, $length, 'UTF-8');
+		return function_exists('mb_substr') ? mb_substr($s, $start, $length, 'UTF-8') : iconv_substr($s, $start, $length, 'UTF-8'); // MB is much faster
 	}
 
 
@@ -145,9 +152,9 @@ class Strings
 		$s = preg_replace('#[\x00-\x08\x0B-\x1F\x7F]+#', '', $s);
 
 		// right trim
-		$s = preg_replace("#[\t ]+$#m", '', $s);
+		$s = preg_replace('#[\t ]+$#m', '', $s);
 
-		// trailing spaces
+		// leading and trailing blank lines
 		$s = trim($s, "\n");
 
 		return $s;
@@ -162,15 +169,15 @@ class Strings
 	 */
 	public static function toAscii($s)
 	{
-		$s = preg_replace('#[^\x09\x0A\x0D\x20-\x7E\xA0-\x{10FFFF}]#u', '', $s);
+		$s = preg_replace('#[^\x09\x0A\x0D\x20-\x7E\xA0-\x{2FF}\x{370}-\x{10FFFF}]#u', '', $s);
 		$s = strtr($s, '`\'"^~', "\x01\x02\x03\x04\x05");
 		if (ICONV_IMPL === 'glibc') {
 			$s = @iconv('UTF-8', 'WINDOWS-1250//TRANSLIT', $s); // intentionally @
 			$s = strtr($s, "\xa5\xa3\xbc\x8c\xa7\x8a\xaa\x8d\x8f\x8e\xaf\xb9\xb3\xbe\x9c\x9a\xba\x9d\x9f\x9e"
 				. "\xbf\xc0\xc1\xc2\xc3\xc4\xc5\xc6\xc7\xc8\xc9\xca\xcb\xcc\xcd\xce\xcf\xd0\xd1\xd2\xd3"
 				. "\xd4\xd5\xd6\xd7\xd8\xd9\xda\xdb\xdc\xdd\xde\xdf\xe0\xe1\xe2\xe3\xe4\xe5\xe6\xe7\xe8"
-				. "\xe9\xea\xeb\xec\xed\xee\xef\xf0\xf1\xf2\xf3\xf4\xf5\xf6\xf8\xf9\xfa\xfb\xfc\xfd\xfe",
-				"ALLSSSSTZZZallssstzzzRAAAALCCCEEEEIIDDNNOOOOxRUUUUYTsraaaalccceeeeiiddnnooooruuuuyt");
+				. "\xe9\xea\xeb\xec\xed\xee\xef\xf0\xf1\xf2\xf3\xf4\xf5\xf6\xf8\xf9\xfa\xfb\xfc\xfd\xfe\x96",
+				"ALLSSSSTZZZallssstzzzRAAAALCCCEEEEIIDDNNOOOOxRUUUUYTsraaaalccceeeeiiddnnooooruuuuyt-");
 		} else {
 			$s = @iconv('UTF-8', 'ASCII//TRANSLIT', $s); // intentionally @
 		}
@@ -316,7 +323,7 @@ class Strings
 	 */
 	public static function length($s)
 	{
-		return function_exists('mb_strlen') ? mb_strlen($s, 'UTF-8') : strlen(utf8_decode($s));
+		return strlen(utf8_decode($s)); // fastest way
 	}
 
 
@@ -330,7 +337,7 @@ class Strings
 	public static function trim($s, $charlist = " \t\n\r\0\x0B\xC2\xA0")
 	{
 		$charlist = preg_quote($charlist, '#');
-		return self::replace($s, '#^['.$charlist.']+|['.$charlist.']+$#u', '');
+		return self::replace($s, '#^['.$charlist.']+|['.$charlist.']+\z#u', '');
 	}
 
 
@@ -368,6 +375,18 @@ class Strings
 
 
 	/**
+	 * Reverse string.
+	 * @param  string  UTF-8 encoding
+	 * @return string
+	 */
+	public static function reverse($s)
+	{
+		return @iconv('UTF-32LE', 'UTF-8', strrev(@iconv('UTF-8', 'UTF-32BE', $s)));
+	}
+
+
+
+	/**
 	 * Generate random string.
 	 * @param  int
 	 * @param  string
@@ -380,14 +399,19 @@ class Strings
 		}, $charlist));
 		$chLen = strlen($charlist);
 
+		static $rand3;
+		if (!$rand3) {
+			$rand3 = md5(serialize($_SERVER), TRUE);
+		}
+
 		$s = '';
 		for ($i = 0; $i < $length; $i++) {
 			if ($i % 5 === 0) {
-				$rand = lcg_value();
-				$rand2 = microtime(TRUE);
+				list($rand, $rand2) = explode(' ', microtime());
+				$rand += lcg_value();
 			}
 			$rand *= $chLen;
-			$s .= $charlist[($rand + $rand2) % $chLen];
+			$s .= $charlist[($rand + $rand2 + ord($rand3[$i % strlen($rand3)])) % $chLen];
 			$rand -= (int) $rand;
 		}
 		return $s;
@@ -404,9 +428,15 @@ class Strings
 	 */
 	public static function split($subject, $pattern, $flags = 0)
 	{
-		Nette\Diagnostics\Debugger::tryError();
+		set_error_handler(function($severity, $message) use ($pattern) { // preg_last_error does not return compile errors
+			restore_error_handler();
+			throw new RegexpException("$message in pattern: $pattern");
+		});
 		$res = preg_split($pattern, $subject, -1, $flags | PREG_SPLIT_DELIM_CAPTURE);
-		self::catchPregError($pattern);
+		restore_error_handler();
+		if (preg_last_error()) { // run-time error
+			throw new RegexpException(NULL, preg_last_error(), $pattern);
+		}
 		return $res;
 	}
 
@@ -425,9 +455,15 @@ class Strings
 		if ($offset > strlen($subject)) {
 			return NULL;
 		}
-		Nette\Diagnostics\Debugger::tryError();
+		set_error_handler(function($severity, $message) use ($pattern) { // preg_last_error does not return compile errors
+			restore_error_handler();
+			throw new RegexpException("$message in pattern: $pattern");
+		});
 		$res = preg_match($pattern, $subject, $m, $flags, $offset);
-		self::catchPregError($pattern);
+		restore_error_handler();
+		if (preg_last_error()) { // run-time error
+			throw new RegexpException(NULL, preg_last_error(), $pattern);
+		}
 		if ($res) {
 			return $m;
 		}
@@ -448,13 +484,19 @@ class Strings
 		if ($offset > strlen($subject)) {
 			return array();
 		}
-		Nette\Diagnostics\Debugger::tryError();
+		set_error_handler(function($severity, $message) use ($pattern) { // preg_last_error does not return compile errors
+			restore_error_handler();
+			throw new RegexpException("$message in pattern: $pattern");
+		});
 		$res = preg_match_all(
 			$pattern, $subject, $m,
 			($flags & PREG_PATTERN_ORDER) ? $flags : ($flags | PREG_SET_ORDER),
 			$offset
 		);
-		self::catchPregError($pattern);
+		restore_error_handler();
+		if (preg_last_error()) { // run-time error
+			throw new RegexpException(NULL, preg_last_error(), $pattern);
+		}
 		return $m;
 	}
 
@@ -464,98 +506,48 @@ class Strings
 	 * Perform a regular expression search and replace.
 	 * @param  string
 	 * @param  string|array
-	 * @param  string|callback
+	 * @param  string|callable
 	 * @param  int
 	 * @return string
 	 */
 	public static function replace($subject, $pattern, $replacement = NULL, $limit = -1)
 	{
-		Nette\Diagnostics\Debugger::tryError();
 		if (is_object($replacement) || is_array($replacement)) {
 			if ($replacement instanceof Nette\Callback) {
 				$replacement = $replacement->getNative();
 			}
 			if (!is_callable($replacement, FALSE, $textual)) {
-				Nette\Diagnostics\Debugger::catchError($foo);
 				throw new Nette\InvalidStateException("Callback '$textual' is not callable.");
 			}
+
+			set_error_handler(function($severity, $message) use (& $tmp) { // preg_last_error does not return compile errors
+				restore_error_handler();
+				throw new RegexpException("$message in pattern: $tmp");
+			});
+			foreach ((array) $pattern as $tmp) {
+				preg_match($tmp, '');
+			}
+			restore_error_handler();
+
 			$res = preg_replace_callback($pattern, $replacement, $subject, $limit);
-
-			if (Nette\Diagnostics\Debugger::catchError($e)) { // compile error
-				$trace = $e->getTrace();
-				if (isset($trace[2]['class']) && $trace[2]['class'] === __CLASS__) {
-					throw new RegexpException($e->getMessage() . " in pattern: $pattern");
-				}
+			if ($res === NULL && preg_last_error()) { // run-time error
+				throw new RegexpException(NULL, preg_last_error(), $pattern);
 			}
+			return $res;
 
-		} elseif (is_array($pattern)) {
-			$res = preg_replace(array_keys($pattern), array_values($pattern), $subject, $limit);
-
-		} else {
-			$res = preg_replace($pattern, $replacement, $subject, $limit);
+		} elseif ($replacement === NULL && is_array($pattern)) {
+			$replacement = array_values($pattern);
+			$pattern = array_keys($pattern);
 		}
-		self::catchPregError($pattern);
-		return $res;
-	}
 
-
-
-	/** @internal */
-	public static function catchPregError($pattern)
-	{
-		if (Nette\Diagnostics\Debugger::catchError($e)) { // compile error
-			throw new RegexpException($e->getMessage() . " in pattern: $pattern");
-
-		} elseif (preg_last_error()) { // run-time error
-			static $messages = array(
-				PREG_INTERNAL_ERROR => 'Internal error',
-				PREG_BACKTRACK_LIMIT_ERROR => 'Backtrack limit was exhausted',
-				PREG_RECURSION_LIMIT_ERROR => 'Recursion limit was exhausted',
-				PREG_BAD_UTF8_ERROR => 'Malformed UTF-8 data',
-				5 => 'Offset didn\'t correspond to the begin of a valid UTF-8 code point', // PREG_BAD_UTF8_OFFSET_ERROR
-			);
-			$code = preg_last_error();
-			throw new RegexpException((isset($messages[$code]) ? $messages[$code] : 'Unknown error') . " (pattern: $pattern)", $code);
-		}
-	}
-
-
-
-	/**
-	 * Expands %placeholders% in string.
-	 * @param  string
-	 * @param  array
-	 * @param  bool
-	 * @return mixed
-	 * @throws Nette\InvalidArgumentException
-	 */
-	public static function expand($s, array $params, $recursive = FALSE)
-	{
-		$parts = preg_split('#%([\w.-]*)%#i', $s, -1, PREG_SPLIT_DELIM_CAPTURE);
-		$res = '';
-		foreach ($parts as $n => $part) {
-			if ($n % 2 === 0) {
-				$res .= $part;
-
-			} elseif ($part === '') {
-				$res .= '%';
-
-			} elseif (isset($recursive[$part])) {
-				throw new Nette\InvalidArgumentException('Circular reference detected for variables: ' . implode(', ', array_keys($recursive)) . '.');
-
-			} else {
-				$val = Arrays::get($params, explode('.', $part));
-				if ($recursive && is_string($val)) {
-					$val = self::expand($val, $params, (is_array($recursive) ? $recursive : array()) + array($part => 1));
-				}
-				if (strlen($part) + 2 === strlen($s)) {
-					return $val;
-				}
-				if (!is_scalar($val)) {
-					throw new Nette\InvalidArgumentException("Unable to concatenate non-scalar parameter '$part' into '$s'.");
-				}
-				$res .= $val;
-			}
+		set_error_handler(function($severity, $message) use ($pattern) { // preg_last_error does not return compile errors
+			restore_error_handler();
+			throw new RegexpException("$message in pattern: " . implode(' or ', (array) $pattern));
+		});
+		$res = preg_replace($pattern, $replacement, $subject, $limit);
+		restore_error_handler();
+		if (preg_last_error()) { // run-time error
+			throw new RegexpException(NULL, preg_last_error(), implode(' or ', (array) $pattern));
 		}
 		return $res;
 	}
@@ -569,4 +561,20 @@ class Strings
  */
 class RegexpException extends \Exception
 {
+	static public $messages = array(
+		PREG_INTERNAL_ERROR => 'Internal error',
+		PREG_BACKTRACK_LIMIT_ERROR => 'Backtrack limit was exhausted',
+		PREG_RECURSION_LIMIT_ERROR => 'Recursion limit was exhausted',
+		PREG_BAD_UTF8_ERROR => 'Malformed UTF-8 data',
+		5 => 'Offset didn\'t correspond to the begin of a valid UTF-8 code point', // PREG_BAD_UTF8_OFFSET_ERROR
+	);
+
+	public function __construct($message, $code = NULL, $pattern = NULL)
+	{
+		if (!$message) {
+			$message = (isset(self::$messages[$code]) ? self::$messages[$code] : 'Unknown error') . ($pattern ? " (pattern: $pattern)" : '');
+		}
+		parent::__construct($message, $code);
+	}
+
 }

@@ -3,7 +3,7 @@
 /**
  * This file is part of the Nette Framework (http://nette.org)
  *
- * Copyright (c) 2004, 2011 David Grudl (http://davidgrudl.com)
+ * Copyright (c) 2004 David Grudl (http://davidgrudl.com)
  *
  * For the full copyright and license information, please view
  * the file license.txt that was distributed with this source code.
@@ -11,8 +11,7 @@
 
 namespace Nette\Utils;
 
-use Nette,
-	Nette\Utils\Strings;
+use Nette;
 
 
 
@@ -20,7 +19,6 @@ use Nette,
  * Simple lexical analyser.
  *
  * @author     David Grudl
- * @internal
  */
 class Tokenizer extends Nette\Object
 {
@@ -252,6 +250,14 @@ class Tokenizer extends Nette\Object
 
 
 
+	public function reset()
+	{
+		$this->position = 0;
+		$this->current = NULL;
+	}
+
+
+
 	/**
 	 * Looks for (first) (not) wanted tokens.
 	 * @param  int token number
@@ -289,7 +295,6 @@ class Tokenizer extends Nette\Object
 
 /**
  * The exception that indicates tokenizer error.
- * @internal
  */
 class TokenizerException extends \Exception
 {

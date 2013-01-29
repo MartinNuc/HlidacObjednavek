@@ -3,7 +3,7 @@
 /**
  * This file is part of the Nette Framework (http://nette.org)
  *
- * Copyright (c) 2004, 2011 David Grudl (http://davidgrudl.com)
+ * Copyright (c) 2004 David Grudl (http://davidgrudl.com)
  *
  * For the full copyright and license information, please view
  * the file license.txt that was distributed with this source code.
@@ -21,11 +21,12 @@ use Nette,
  *
  * @author     David Grudl
  *
- * @property   string $from
+ * @property   array $from
  * @property   string $subject
  * @property   string $returnPath
  * @property   int $priority
- * @property   string $htmlBody
+ * @property   mixed $htmlBody
+ * @property   IMailer $mailer
  */
 class Message extends MimePart
 {
@@ -62,7 +63,7 @@ class Message extends MimePart
 
 	public function __construct()
 	{
-		foreach (self::$defaultHeaders as $name => $value) {
+		foreach (static::$defaultHeaders as $name => $value) {
 			$this->setHeader($name, $value);
 		}
 		$this->setHeader('Date', date('r'));
@@ -183,7 +184,7 @@ class Message extends MimePart
 	 */
 	private function formatEmail($email, $name)
 	{
-		if (!$name && preg_match('#^(.+) +<(.*)>$#', $email, $matches)) {
+		if (!$name && preg_match('#^(.+) +<(.*)>\z#', $email, $matches)) {
 			return array($matches[2] => $matches[1]);
 		} else {
 			return array($email => $name);
@@ -303,7 +304,7 @@ class Message extends MimePart
 	{
 		$part = new MimePart;
 		if ($content === NULL) {
-			$content = file_get_contents($file);
+			$content = @file_get_contents($file); // intentionally @
 			if ($content === FALSE) {
 				throw new Nette\FileNotFoundException("Unable to read file '$file'.");
 			}
@@ -336,7 +337,6 @@ class Message extends MimePart
 
 	/**
 	 * Sets the mailer.
-	 * @param  IMailer
 	 * @return Message  provides a fluent interface
 	 */
 	public function setMailer(IMailer $mailer)
@@ -354,7 +354,7 @@ class Message extends MimePart
 	public function getMailer()
 	{
 		if ($this->mailer === NULL) {
-			$this->mailer = is_object(self::$defaultMailer) ? self::$defaultMailer : new static::$defaultMailer;
+			$this->mailer = is_object(static::$defaultMailer) ? static::$defaultMailer : new static::$defaultMailer;
 		}
 		return $this->mailer;
 	}

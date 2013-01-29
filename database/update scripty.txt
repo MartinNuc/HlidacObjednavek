@@ -4,3 +4,6 @@ update automaty set osobni=0 where
  (SELECT distinct id_automat FROM (select * from automaty) as automaty
   left join zakaznici using (id_zakaznik)
   where zakaznici.osobni_zakaznik=0 group by id_automat)
+
+2013-01-29 - Oprava akci, aby pocet mohl byt float
+ALTER TABLE `hlidacobjednavek`.`akce` MODIFY COLUMN `pocet` FLOAT NOT NULL;

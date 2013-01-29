@@ -545,10 +545,10 @@ class ObjednavkyPresenter extends BasePresenter {
         
         $diff = abs(strtotime($this->filtr_do) - strtotime($this->filtr_od));
         $years = floor($diff / (365*60*60*24));
-        $pocet_mesicu = $months = floor(($diff - $years * 365*60*60*24) / (30*60*60*24));
+        $pocet_mesicu = floor(($diff) / (30*60*60*24));
         if ($pocet_mesicu == 0)
             $pocet_mesicu = 1;
-
+        
         $predelane = array();
         $i=0;
         
@@ -1033,9 +1033,11 @@ class ObjednavkyPresenter extends BasePresenter {
         
         $diff = abs(strtotime($this->filtr_do) - strtotime($this->filtr_od));
         $years = floor($diff / (365*60*60*24));
-        $pocet_mesicu = $months = floor(($diff - $years * 365*60*60*24) / (30*60*60*24));
+        $pocet_mesicu = floor(($diff) / (30*60*60*24));
+
         if ($pocet_mesicu == 0)
             $pocet_mesicu = 1;
+        
         
         $historie = $this->model->getObjednavkyOdDo(array("datum" => "DESC", "id_objednavka" => "DESC"), array('id_zakaznik' => $id_zakaznik), NULL, NULL, $this->filtr_od, $this->filtr_do);
 

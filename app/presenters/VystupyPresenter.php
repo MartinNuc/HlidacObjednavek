@@ -895,9 +895,13 @@ class VystupyPresenter extends BasePresenter {
         $zakaznik_cena = array();
         // pripravim si soucty
         $soucty_celkem = array();
+        $soucty_celkem_cena = array();
         $ceny_zbozi = array();
         foreach ($zbozi as $t)
+        {
             $soucty_celkem[$t->id_zbozi] = 0;
+            $soucty_celkem_cena[$t->id_zbozi] = 0;
+        }
         
         // pro kazdyho zakaznika udelame soucet toho co koupil
         foreach ($zakaznici as $zakaznik)
@@ -914,6 +918,7 @@ class VystupyPresenter extends BasePresenter {
             {
                 $soucty[$zakaznik->id_zakaznik][$t->id_zbozi] = $t->pocet;
                 $soucty_celkem[$t->id_zbozi] += $t->pocet;
+                $soucty_celkem_cena[$t->id_zbozi] += $t->pocet * $t->prodejni_cena;
                 $zakaznik_cena[$zakaznik->id_zakaznik]+=$t->pocet * $t->prodejni_cena;
                 $ceny_zbozi[$zakaznik->id_zakaznik][$t->id_zbozi] = $t->pocet * $t->prodejni_cena;
             }
@@ -940,10 +945,7 @@ class VystupyPresenter extends BasePresenter {
             }
 
         }
-        $zakaznici = $zakaznici;
-        $soucty = $soucty;
-        $soucty_celkem = $soucty_celkem;
-        $zbozi = $zbozi;
+
         if ($this->skryt_automaty != true)
             $skryt_automaty = false;
         else
@@ -1006,22 +1008,6 @@ class VystupyPresenter extends BasePresenter {
                 }   
             }
             $i++;
-            if ($zobrazit_ceny == true)
-            {
-                $c = "A";
-                if (isset($zakaznik->nazev))
-                    $objPHPExcel->getActiveSheet()->SetCellValue('A' . $i, $zakaznik_cena[$zakaznik->id_zakaznik]);
-                $c = "B";
-                foreach ($zbozi as $zb)
-                {
-                    if (isset($ceny_zbozi[$zakaznik->id_zakaznik][$zb->id_zbozi]) && $ceny_zbozi[$zakaznik->id_zakaznik][$zb->id_zbozi] > 0)
-                    {
-                        $objPHPExcel->getActiveSheet()->SetCellValue($c . $i, $ceny_zbozi[$zakaznik->id_zakaznik][$zb->id_zbozi]);
-                    }
-                    $c++;
-                }
-            }
-            $i++;
         }
         $objPHPExcel->getActiveSheet()->SetCellValue('A' . $i, "Celkem: ");
         $c = "B";
@@ -1029,6 +1015,16 @@ class VystupyPresenter extends BasePresenter {
         {
             $objPHPExcel->getActiveSheet()->SetCellValue($c . $i, $zb);
             $c++;
+        }
+        if ($zobrazit_ceny == true)
+        {
+            $i++;
+            $c = "B";
+            foreach ($soucty_celkem_cena as $zb)
+            {
+                $objPHPExcel->getActiveSheet()->SetCellValue($c . $i, $zb);
+                $c++;
+            }
         }
         
         // Save Excel 2007 file
@@ -1327,10 +1323,14 @@ class VystupyPresenter extends BasePresenter {
         
         // pripravim si soucty
         $soucty_celkem = array();
+        $soucty_celkem_cena = array();
         $ceny_zbozi = array();
         $zakaznik_cena = array();
         foreach ($zbozi as $t)
+        {
             $soucty_celkem[$t->id_zbozi] = 0;
+            $soucty_celkem_cena[$t->id_zbozi] = 0;
+        }
         
         // pro kazdyho zakaznika udelame soucet toho co koupil
         foreach ($zakaznici as $zakaznik)
@@ -1352,6 +1352,7 @@ class VystupyPresenter extends BasePresenter {
                 $soucty_celkem[$t->id_zbozi] += $t->pocet;
                 $zakaznik_cena[$zakaznik->id_zakaznik]+=$t->pocet * $t->prodejni_cena;
                 $ceny_zbozi[$zakaznik->id_zakaznik][$t->id_zbozi] = $t->pocet * $t->prodejni_cena;
+                $soucty_celkem_cena[$t->id_zbozi] += $t->pocet * $t->prodejni_cena;
             }
             
             //if ($this->skryt_automaty == true)   // TODO: optimalizace, aby se nemuselo zbytecne pocitat ... ale pak chybi v sablone. Nevim co s tim.
@@ -1377,6 +1378,7 @@ class VystupyPresenter extends BasePresenter {
         $this->template->zakaznici = $zakaznici;
         $this->template->soucty = $soucty;
         $this->template->soucty_celkem = $soucty_celkem;
+        $this->template->soucty_celkem_cena = $soucty_celkem_cena;
         $this->template->zakaznik_cena=$zakaznik_cena;
         $this->template->zbozi = $zbozi;
         if ($this->skryt_automaty != true)

@@ -82,22 +82,6 @@
                     {assign $i => $i+1}
                 {/foreach}
             {/if}
-            {if ($zobrazit_ceny == true)}
-                <tr>
-                    <td>
-                        {if isset($zakaznik_cena[$zakaznik->id_zakaznik]) && $zakaznik_cena[$zakaznik->id_zakaznik] > 0}
-                            Zákazník celkem: {$zakaznik_cena[$zakaznik->id_zakaznik]} {$mena}
-                        {/if}
-                    </td>
-                    {foreach $zbozi as $zb}
-                    <td>
-                        {if $ceny_zbozi[$zakaznik->id_zakaznik][$zb->id_zbozi] > 0}
-                            {$ceny_zbozi[$zakaznik->id_zakaznik][$zb->id_zbozi]} {$mena}
-                        {/if}
-                    </td>
-                    {/foreach} 
-                </tr>
-            {/if}
 	{/foreach}
         {if count($zakaznici) != 0}
             <tr>
@@ -107,6 +91,17 @@
                         {$zb}
                     </td>
                 {/foreach}
+            </tr>
+            {if ($zobrazit_ceny == true)}
+                <tr>
+                    <td>Celkem hodnota</td>
+                    {foreach $soucty_celkem_cena as $zb}
+                        <td>
+                            {$zb} {$mena}
+                        </td>
+                    {/foreach}
+                </tr>
+            {/if}
         {/if}
     </tbody>
 </table>

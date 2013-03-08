@@ -892,7 +892,6 @@ class VystupyPresenter extends BasePresenter {
         $soucty = array();
         $zbozi = array();
         $zbozi = $this->zboziModel->getZbozi(array("id_kategorie" => "ASC","zkratka" => "ASC"), NULL, NULL, NULL, NULL, $filtr_kategorii);
-        $zakaznik_cena = array();
         // pripravim si soucty
         $soucty_celkem = array();
         $soucty_celkem_cena = array();
@@ -906,7 +905,6 @@ class VystupyPresenter extends BasePresenter {
         // pro kazdyho zakaznika udelame soucet toho co koupil
         foreach ($zakaznici as $zakaznik)
         {
-            $zakaznik_cena[$zakaznik->id_zakaznik] = 0;
             // zde se k zakaznikovi najdou vsechna zbozi, ktera bral
             $temp = $this -> zboziModel -> getZboziOdDo($order = array(
                 'zkratka' => 'ASC'), array("id_zakaznik" => $zakaznik->id_zakaznik), $this->filtr_od, $this->filtr_do, $filtr_kategorii, $filtr_oblasti);
@@ -919,7 +917,6 @@ class VystupyPresenter extends BasePresenter {
                 $soucty[$zakaznik->id_zakaznik][$t->id_zbozi] = $t->pocet;
                 $soucty_celkem[$t->id_zbozi] += $t->pocet;
                 $soucty_celkem_cena[$t->id_zbozi] += $t->pocet * $t->prodejni_cena;
-                $zakaznik_cena[$zakaznik->id_zakaznik]+=$t->pocet * $t->prodejni_cena;
                 $ceny_zbozi[$zakaznik->id_zakaznik][$t->id_zbozi] = $t->pocet * $t->prodejni_cena;
             }
             
@@ -981,8 +978,7 @@ class VystupyPresenter extends BasePresenter {
                 $objPHPExcel->getActiveSheet()->SetCellValue('A' . $i, $zakaznik->nazev);
             $c = "B";
             foreach ($zbozi as $item)
-            {
-                $zakaznik_cena[$zakaznik->id_zakaznik]+=$t->pocet * $t->prodejni_cena;
+            { 
                 $objPHPExcel->getActiveSheet()->SetCellValue($c . $i, $soucty[$zakaznik->id_zakaznik][$item->id_zbozi]);
                 $c++;
             }

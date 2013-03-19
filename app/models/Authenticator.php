@@ -20,14 +20,12 @@ class Authenticator extends Nette\Object implements Nette\Security\IAuthenticato
 	public function authenticate(array $credentials)
 	{
 		list($username, $password) = $credentials;
+
 		$row = dibi::select('*')->from('users')->where('username = %s', $username)->fetch();
-                //$row = dibi::query("SELECT * FROM users WHERE username = %s", $username)->setRowClass('User');
-                //$row = $this->database->table('users')->where('username', $username)->fetch();
 
 		if (!$row) {
 			throw new Nette\Security\AuthenticationException("Špatná kombinace uživatelského jména a hesla.", self::IDENTITY_NOT_FOUND);
 		}
-                echo $this->calculateHash($password, $username);
 		if ($row->password !== $this->calculateHash($password, $username) || $row->disabled==1) {
 			throw new Nette\Security\AuthenticationException("Špatná kombinace uživatelského jména a hesla.", self::INVALID_CREDENTIAL);
 		}

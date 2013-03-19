@@ -182,17 +182,17 @@ class VystupyPresenter extends BasePresenter {
                     $objPHPExcel->getActiveSheet()->SetCellValue('B' . $i, number_format($item->nakupni_cena,2, ',', ' ') . " " . $this->mena);
                     $objPHPExcel->getActiveSheet()->SetCellValue('C' . $i, number_format($item->prodejni_cena,2, ',', ' ') . " " . $this->mena  );
                     $objPHPExcel->getActiveSheet()->SetCellValue('D' . $i, $item->skladem . " ks");
-                    $objPHPExcel->getActiveSheet()->SetCellValue('E' . $i, number_format($item->nakupni_cena * $item->skladem,2, ',', ' ') . " Kč" );
-                    $objPHPExcel->getActiveSheet()->SetCellValue('F' . $i, number_format($item->prodejni_cena * $item->skladem,2, ',', ' ') . " Kč" );
+                    $objPHPExcel->getActiveSheet()->SetCellValue('E' . $i, number_format($item->nakupni_cena * $item->skladem,2, ',', ' '));
+                    $objPHPExcel->getActiveSheet()->SetCellValue('F' . $i, number_format($item->prodejni_cena * $item->skladem,2, ',', ' '));
                     $i++;
                 }
                 $objPHPExcel->getActiveSheet()->SetCellValue('D' . $i, "Celkem: " );
-                $objPHPExcel->getActiveSheet()->SetCellValue('E' . $i, number_format($soucty_nc[$kat->id_kategorie],2, ',', ' ') . " Kč" );
-                $objPHPExcel->getActiveSheet()->SetCellValue('F' . $i, number_format($soucty_pc[$kat->id_kategorie],2, ',', ' ') . " Kč" );
+                $objPHPExcel->getActiveSheet()->SetCellValue('E' . $i, number_format($soucty_nc[$kat->id_kategorie],2, ',', ' '));
+                $objPHPExcel->getActiveSheet()->SetCellValue('F' . $i, number_format($soucty_pc[$kat->id_kategorie],2, ',', ' '));
             }
             $objPHPExcel->getActiveSheet()->SetCellValue('D' . $i, "Součet celkem: " );
-            $objPHPExcel->getActiveSheet()->SetCellValue('E' . $i, number_format($soucty_nc_celkem,2, ',', ' ') . " Kč" );
-            $objPHPExcel->getActiveSheet()->SetCellValue('F' . $i, number_format($soucty_pc_celkem,2, ',', ' ') . " Kč" );
+            $objPHPExcel->getActiveSheet()->SetCellValue('E' . $i, number_format($soucty_nc_celkem,2, ',', ' '));
+            $objPHPExcel->getActiveSheet()->SetCellValue('F' . $i, number_format($soucty_pc_celkem,2, ',', ' '));
             
         }
         else
@@ -216,16 +216,16 @@ class VystupyPresenter extends BasePresenter {
                 foreach ($zbozi[$kat->id_kategorie] as $item)
                 {
                     $objPHPExcel->getActiveSheet()->SetCellValue('A' . $i, $item->zkratka);
-                    $objPHPExcel->getActiveSheet()->SetCellValue('B' . $i, number_format($item->prodejni_cena,2, ',', ' ') . " Kč" );
+                    $objPHPExcel->getActiveSheet()->SetCellValue('B' . $i, number_format($item->prodejni_cena,2, ',', ' '));
                     $objPHPExcel->getActiveSheet()->SetCellValue('C' . $i, $item->skladem . " ks");
-                    $objPHPExcel->getActiveSheet()->SetCellValue('D' . $i, number_format($item->prodejni_cena * $item->skladem,2, ',', ' ') . " Kč" );
+                    $objPHPExcel->getActiveSheet()->SetCellValue('D' . $i, number_format($item->prodejni_cena * $item->skladem,2, ',', ' '));
                     $i++;
                 }
                 $objPHPExcel->getActiveSheet()->SetCellValue('C' . $i, "Celkem: " );
-                $objPHPExcel->getActiveSheet()->SetCellValue('D' . $i, number_format($soucty_pc[$kat->id_kategorie],2, ',', ' ') . " Kč" );
+                $objPHPExcel->getActiveSheet()->SetCellValue('D' . $i, number_format($soucty_pc[$kat->id_kategorie],2, ',', ' '));
             }
             $objPHPExcel->getActiveSheet()->SetCellValue('C' . $i, "Součet celkem: " );
-            $objPHPExcel->getActiveSheet()->SetCellValue('D' . $i, number_format($soucty_pc_celkem,2, ',', ' ') . " Kč" );
+            $objPHPExcel->getActiveSheet()->SetCellValue('D' . $i, number_format($soucty_pc_celkem,2, ',', ' '));
         }
         
         // Save Excel 2007 file

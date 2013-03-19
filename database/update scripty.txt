@@ -5,5 +5,8 @@ update automaty set osobni=0 where
   left join zakaznici using (id_zakaznik)
   where zakaznici.osobni_zakaznik=0 group by id_automat)
 
-2013-01-29 - Oprava akci, aby pocet mohl byt float
+
+2013-01-29 - Oprava akci, aby pocet mohl byt float, cislo zakaznika, cislo faktury
 ALTER TABLE `hlidacobjednavek`.`akce` MODIFY COLUMN `pocet` FLOAT NOT NULL;
+ALTER TABLE `hlidacobjednavek`.`zakaznici` ADD COLUMN `fakturacni_cislo` VARCHAR(45) AFTER `poc`,
+ ADD COLUMN `cislo_zakaznika` VARCHAR(45) AFTER `fakturacni_cislo`;

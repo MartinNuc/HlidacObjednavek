@@ -36,7 +36,7 @@ class Zakaznik extends DibiRow
     public function fetch()
     {
         $res = new Zakaznik();
-        $res = dibi::query('SELECT * FROM [zakaznici] WHERE hidden=0 and [id_zakaznik]=%i', $this->id_zakaznik)->setRowClass('Oblast')->fetch();
+        $res = dibi::query('SELECT * FROM [zakaznici] WHERE hidden=0 and [id_zakaznik]=%i', $this->id_zakaznik)->setRowClass('Zakaznik')->fetch();
         
         if ($res == false)
             return false;

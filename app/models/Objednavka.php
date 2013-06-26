@@ -16,6 +16,8 @@ class Objednavka extends DibiRow
      */
     public function delete()
     {
+        // zbozi musime pri vymazani vratit na sklad
+        $this->vratitZboziDoSkladu();
         // nejdrive musime smazat zbozi
         dibi::query('DELETE FROM [zbozi_objednavky] WHERE [id_objednavka]=%i', $this->id_objednavka);
         // pak samotnou objednavku

@@ -76,7 +76,7 @@ class Objednavka extends DibiRow
         // vrati jednotlive polozky zpet do skladu
         foreach ($zbozi as $id_zbozi => $pocet)
         {
-            dibi::query('UPDATE zbozi SET skladem = skladem + %i', $pocet, ' WHERE [id_zbozi]=%i', $id_zbozi);
+            dibi::query('UPDATE zbozi SET skladem = skladem + %f', $pocet, ' WHERE [id_zbozi]=%i', $id_zbozi);
         }
     }
     

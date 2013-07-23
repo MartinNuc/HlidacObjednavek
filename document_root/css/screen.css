@@ -534,6 +534,7 @@ a[href^="error:"] {
     right: 20px;
     top: 10px;
     width: 220px;
+    z-index: -1;
 }
 
 #login_box {

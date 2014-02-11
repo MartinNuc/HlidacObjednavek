@@ -34,7 +34,7 @@ class ZboziPresenter extends BasePresenter {
                 ->addCondition($form::FILLED)
                 ->addRule(Form::FLOAT, 'Zadejte body jako číslo.');
 
-        
+        $pole = array();
         foreach ($this->dphModel->getDph() as $key => $value)
             $pole[]=$value->dph . " %";
         $form->addSelect('dph', 'DPH:', $pole);

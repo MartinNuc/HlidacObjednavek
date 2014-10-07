@@ -8,9 +8,9 @@ $params['libsDir'] = __DIR__ . '/../libs';
 require $params['libsDir'] . '/Nette/loader.php';
 
 // Enable Nette Debugger for error visualisation & logging
-Debugger::$logDirectory = __DIR__ . '/../log';
-Debugger::$strictMode = TRUE;
-Debugger::enable();
+//Debugger::$logDirectory = __DIR__ . '/../log';
+//Debugger::$strictMode = TRUE;
+//Debugger::enable();
 
 //require $params['libsDir'] . '/dibi/dibi.php';
 // Load configuration from config.neon file

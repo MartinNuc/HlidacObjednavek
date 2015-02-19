@@ -22,6 +22,7 @@ class ZakazniciModel
                         'SELECT * FROM [zakaznici] WHERE hidden=0 
                          %if', isset($where), 'AND %and', isset($where) ? $where : array(), '%end',
                         '%if', isset($filtrLike) && $filtrLike!="", ' AND nazev LIKE %s', isset($filtrLike) ? "%" .$filtrLike."%" : '', '%end',
+			'%if', isset($filtrLike) && $filtrLike!="", ' OR ico LIKE %s', isset($filtrLike) ? "%" .$filtrLike."%" : '', '%end',
                         '%if', isset($order), 'ORDER BY %by', $order, '%end',
                         '%if', isset($limit), 'LIMIT %i %end', $limit,
                         '%if', isset($offset), 'OFFSET %i %end', $offset

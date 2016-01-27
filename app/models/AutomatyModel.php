@@ -108,7 +108,7 @@ class AutomatyModel
         public function getFirstKontakt($id_automat = NULL)
         {
             $res = dibi::query(
-                     'SELECT id_automat, id_kontakt, jmeno, email
+                     'SELECT id_automat, id_kontakt, jmeno, email, telefon
                          FROM [automat_kontakt] LEFT JOIN [kontakty] USING (id_kontakt)
                         WHERE 1=1 ',
                           '%if', isset($id_automat), 'AND %and', isset($id_automat) ? $id_automat : array(), '%end',

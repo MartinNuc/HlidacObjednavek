@@ -28,12 +28,13 @@
             <th>Káva</th>
             <th>Platnost do</th>
             <th>Kontakt</th>
+            <th>Telefon</th>
             <th>Email</th>
         </tr>
     </thead>
     <tbody>
         {if count($items) == 0}
-            <tr class="licha"><td colspan="11">Žádná data</td></tr>
+            <tr class="licha"><td colspan="12">Žádná data</td></tr>
         {/if}
 	{assign $i => 0}
 	{foreach $items as $item}
@@ -85,6 +86,13 @@
             <td>
                 {if isset($kontakt_jmeno[$item->id_automat])}
                     {$kontakt_jmeno[$item->id_automat]}
+                {else}
+                    &nbsp;
+                {/if}
+            </td> 
+            <td>
+                {if isset($kontakt_telefon[$item->id_automat])}
+                    {$kontakt_telefon[$item->id_automat]}
                 {else}
                     &nbsp;
                 {/if}

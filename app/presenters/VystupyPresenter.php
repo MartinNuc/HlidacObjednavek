@@ -356,6 +356,7 @@ class VystupyPresenter extends BasePresenter {
         
         $kontakt_jmeno = $this->automatyModel->getFirstKontakt (NULL)->fetchPairs("id_automat", "jmeno");
         $kontakt_email = $this->automatyModel->getFirstKontakt (NULL)->fetchPairs("id_automat", "email");
+        $kontakt_telefon = $this->automatyModel->getFirstKontakt (NULL)->fetchPairs("id_automat", "telefon");
         $kava = $this->zboziModel->getZboziPodleSmlouvy (NULL)->fetchPairs("id_zakaznik", "zkratka");
         $items = $this->automatyModel->getAutomatyVystup(array("zakaznik_nazev" => "ASC"), $where, $filtr_oblasti);
         
@@ -372,6 +373,7 @@ class VystupyPresenter extends BasePresenter {
         $objPHPExcel->getActiveSheet()->SetCellValue('I1', 'Platnost do');
         $objPHPExcel->getActiveSheet()->SetCellValue('J1', 'Kontakt');
         $objPHPExcel->getActiveSheet()->SetCellValue('K1', 'Email');
+        $objPHPExcel->getActiveSheet()->SetCellValue('L1', 'Telefon');
         $objPHPExcel->getActiveSheet()->setTitle('Export');
 
         $i = 1;
@@ -392,6 +394,8 @@ class VystupyPresenter extends BasePresenter {
                     $objPHPExcel->getActiveSheet()->SetCellValue('J' . $i, $kontakt_jmeno[$item->id_automat]);
             if (isset($kontakt_email[$item->id_automat]))
                     $objPHPExcel->getActiveSheet()->SetCellValue('K' . $i, $kontakt_email[$item->id_automat]);
+            if (isset($kontakt_telefon[$item->id_automat]))
+                    $objPHPExcel->getActiveSheet()->SetCellValue('L' . $i, $kontakt_telefon[$item->id_automat]);
         }
         
         // Save Excel 2007 file
@@ -674,6 +678,7 @@ class VystupyPresenter extends BasePresenter {
         
         $this->template->kontakt_jmeno = $this->automatyModel->getFirstKontakt (NULL)->fetchPairs("id_automat", "jmeno");
         $this->template->kontakt_email = $this->automatyModel->getFirstKontakt (NULL)->fetchPairs("id_automat", "email");
+        $this->template->kontakt_telefon = $this->automatyModel->getFirstKontakt (NULL)->fetchPairs("id_automat", "telefon");
         $this->template->kava = $this->zboziModel->getZboziPodleSmlouvy (NULL)->fetchPairs("id_zakaznik", "zkratka");
         $this->template->items = $this->automatyModel->getAutomatyVystup(array("zakaznik_nazev" => "ASC"), $where, $filtr_oblasti);
     }

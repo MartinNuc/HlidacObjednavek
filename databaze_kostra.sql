@@ -246,7 +246,7 @@ CREATE TABLE `zakaznici` (
 --
 -- Dumping data for table `zakaznici`
 --
-INSERT INTO `zakaznici` VALUES  (0,'SKLAD','','',0,'',0,'','','','','');
+INSERT INTO `zakaznici` VALUES  (0,'SKLAD','','',0,'',0,'');
 
 --
 -- Definition of table `zakaznici_zbozi`
